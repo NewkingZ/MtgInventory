@@ -10,4 +10,5 @@ class Client:
         # w, h = self.window.winfo_screenwidth(), self.window.winfo_screenheight()
         # root.geometry("%dx%d+0+0" % (w, h))
         self.window.state('zoomed')
+        # Set the icon later 
 
