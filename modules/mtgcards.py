@@ -13,4 +13,5 @@ MYTHIC = 'Mythic Rare'
 
 
 def fetch(name):
+    print(name)
     return Card.where(name=name).all()
