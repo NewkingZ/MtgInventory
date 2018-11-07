@@ -13,6 +13,7 @@ Card display
 Search capabilities
 Different card storage card locations settable by the user
 Deck Price Tracking (weekly?)
+	-> Foils
 Wishlist
 
 For searching:

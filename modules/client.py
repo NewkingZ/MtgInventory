@@ -2,7 +2,9 @@
 
 import tkinter as tk
 from tkinter import ttk
+from tkinter import font as tkfont
 import modules.mtgcards as mtg
+import re
 
 
 def print_crap():
@@ -48,7 +50,7 @@ class SearchFrame(tk.Frame):
 
         # 2 main elements, search frame with options and the listbox
         self.search_frame = tk.Frame(self)
-        self.list = tk.Listbox(self)
+        self.list = tk.Listbox(self, font='TkFixedFont')
 
         self.columnconfigure(10, weight=1)
         self.rowconfigure(0, weight=5)
@@ -76,5 +78,26 @@ class SearchFrame(tk.Frame):
         cards = mtg.fetch(name)
         self.list.delete(first=0, last=tk.END)
         for card in cards:
-            self.list.insert(tk.END, card.name)
+            self.card_found(card)
+
+    def card_found(self, card):
+        # Sort elements by their properties and spacing
+        mana = card.mana_cost
+        if mana is None:
+            mana = "-"
+        elements = [[card.name, 50],
+                    [card.set_name, 40],
+                    [re.sub(r'[{}]', "", mana), 0]]
+
+        card_data = ""
+        for item in elements:
+            try:
+                card_data += item[0] + " " * (item[1] - len(item[0]))
+
+            except TypeError:
+                card_data += "-" + " " * (50 - len("-"))
+
+        self.list.insert(tk.END, card_data)
+
+
 
