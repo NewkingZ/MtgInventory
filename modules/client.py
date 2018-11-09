@@ -85,8 +85,10 @@ class SearchFrame(tk.Frame):
         mana = card.mana_cost
         if mana is None:
             mana = "-"
+
         elements = [[card.name, 50],
-                    [card.set_name, 40],
+                    [card.set_name, 45],
+                    [card.rarity[0], 5],
                     [re.sub(r'[{}]', "", mana), 0]]
 
         card_data = ""
