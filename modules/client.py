@@ -2,7 +2,9 @@
 
 import tkinter as tk
 from tkinter import ttk
-from tkinter import font as tkfont
+from PIL import Image, ImageTk
+import requests
+# from tkinter import font as tkfont
 import modules.mtgcards as mtg
 import re
 
@@ -29,11 +31,21 @@ class Client:
 
         # menu_bar
         # Card View Frame
+        card_frame = tk.Frame(self.window)
+        card_frame.rowconfigure(0, weight=3)
+        card_frame.rowconfigure(1, weight=2)
+        card_frame.columnconfigure(0, weight=1)
+
+        text_frame = tk.Frame(card_frame)
+        text_frame.grid(row=0, column=0, sticky='news')
+        card_name = tk.Label(text_frame)
+        card_name.grid(row=0, column=0, sticky="we")
+
         # Separator
         ttk.Separator(self.window, orient=tk.VERTICAL).grid(column=1, row=1, sticky='ns')
         # Tab Frame
         tab_frame = ttk.Notebook(self.window)
-        search_frame = SearchFrame(tab_frame)
+        search_frame = SearchFrame(tab_frame, card_frame)
         inventory_frame = tk.Frame(tab_frame)
         deck_frame = tk.Frame(tab_frame)
         tab_frame.add(search_frame, text="Search")
@@ -42,22 +54,27 @@ class Client:
         tab_frame.grid_propagate(False)
 
         tab_frame.grid(row=0, column=0, rowspan=100, sticky='news', padx=20, pady=30)
+        card_frame.grid(row=0, column=99, rowspan=100, sticky='news', padx=20, pady=30)
 
 
 class SearchFrame(tk.Frame):
-    def __init__(self, tabs_frame):
+    def __init__(self, tabs_frame, card_frame):
         tk.Frame.__init__(self, tabs_frame)
 
         # 2 main elements, search frame with options and the listbox
         self.search_frame = tk.Frame(self)
+        self.card_display_frame = card_frame
         self.list = tk.Listbox(self, font='TkFixedFont')
+        self.filter = tk.Frame(self, bg="red")
 
         self.columnconfigure(10, weight=1)
-        self.rowconfigure(0, weight=5)
+        self.rowconfigure(0, weight=0)
+        self.rowconfigure(5, weight=5)
         self.rowconfigure(10, weight=15)
         self.rowconfigure(99, weight=0)
 
         self.search_frame.grid(row=0, column=10, sticky='news')
+        self.filter.grid(row=5, column=10, sticky='news')
         self.list.grid(row=10, column=10, sticky='news')
 
         # Search frame stuff settings
@@ -70,6 +87,28 @@ class SearchFrame(tk.Frame):
 
         self.search_name.grid(row=0, columnspan=5, column=0, sticky='new', padx=10, pady=10)
         self.search_button.grid(row=0, column=99, sticky="ne", padx=10, pady=10)
+        self.results = []
+        self.currently_shown = None
+
+        def on_select(evt):
+            lb = evt.widget
+            index = int(lb.curselection()[0])
+            name = self.results[index].name
+            print(name)
+            url = self.results[index].image_url
+            try:
+                resp = requests.get(url, stream=True).raw
+                img = Image.open(resp)
+                card_art = ImageTk.PhotoImage(img)
+                label = tk.Label(self.card_display_frame, image=card_art)
+                label.image = card_art
+
+                label.grid(row=1, column=0, sticky='news')
+
+            except requests.exceptions.RequestException:
+                print("Failed to get image from online (looking for " + name + ")")
+
+        self.list.bind('<<ListboxSelect>>', on_select)
 
     def search_mtg(self):
         name = self.search_name.get()
@@ -79,6 +118,7 @@ class SearchFrame(tk.Frame):
         self.list.delete(first=0, last=tk.END)
         for card in cards:
             self.card_found(card)
+        self.results = cards
 
     def card_found(self, card):
         # Sort elements by their properties and spacing
