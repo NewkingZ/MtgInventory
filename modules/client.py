@@ -32,13 +32,13 @@ class Client:
         # menu_bar
         # Card View Frame
         card_frame = tk.Frame(self.window)
-        card_frame.rowconfigure(0, weight=3)
-        card_frame.rowconfigure(1, weight=2)
+        card_frame.rowconfigure(1, weight=4)
+        card_frame.rowconfigure(0, weight=2)
         card_frame.columnconfigure(0, weight=1)
 
         text_frame = tk.Frame(card_frame)
         text_frame.grid(row=0, column=0, sticky='news')
-        card_name = tk.Label(text_frame)
+        card_name = tk.Label(text_frame, text="test")
         card_name.grid(row=0, column=0, sticky="we")
 
         # Separator
@@ -65,7 +65,7 @@ class SearchFrame(tk.Frame):
         self.search_frame = tk.Frame(self)
         self.card_display_frame = card_frame
         self.list = tk.Listbox(self, font='TkFixedFont')
-        self.filter = tk.Frame(self, bg="red")
+        self.filter = tk.Frame(self)
 
         self.columnconfigure(10, weight=1)
         self.rowconfigure(0, weight=0)
@@ -93,20 +93,22 @@ class SearchFrame(tk.Frame):
         def on_select(evt):
             lb = evt.widget
             index = int(lb.curselection()[0])
-            name = self.results[index].name
-            print(name)
             url = self.results[index].image_url
             try:
                 resp = requests.get(url, stream=True).raw
                 img = Image.open(resp)
+                img = img.resize((300, 418), Image.ANTIALIAS)
                 card_art = ImageTk.PhotoImage(img)
-                label = tk.Label(self.card_display_frame, image=card_art)
+                label = tk.Label(self.card_display_frame, image=card_art, bg="blue")
                 label.image = card_art
 
-                label.grid(row=1, column=0, sticky='news')
+                label.grid(row=0, column=0, sticky='news')
 
             except requests.exceptions.RequestException:
-                print("Failed to get image from online (looking for " + name + ")")
+                label = tk.Label(self.card_display_frame, text="Image not found")
+                label.grid(row=0, column=0, sticky='news')
+
+            # name = tk.Label(self.results[index].name
 
         self.list.bind('<<ListboxSelect>>', on_select)
 
