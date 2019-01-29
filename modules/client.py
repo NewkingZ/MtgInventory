@@ -33,12 +33,29 @@ class Client:
         # menu_bar
         # Card View Frame
         self.card_frame = tk.Frame(self.window)
-        self.card_frame.rowconfigure(1, weight=4)
-        self.card_frame.rowconfigure(0, weight=2)
+        self.card_frame.rowconfigure(0, weight=4)
+        self.card_frame.rowconfigure(1, weight=2)
         self.card_frame.columnconfigure(0, weight=1)
 
-        # text_frame = tk.Frame(self.card_frame)
-        # text_frame.grid(row=0, column=0, sticky='news')
+        self.text_frame = tk.Frame(self.card_frame)
+        self.text_card_name = tk.StringVar()
+        self.text_set_name = tk.StringVar()
+        self.text_type_name = tk.StringVar()
+        self.text_text_name = tk.StringVar()
+        self.text_flavor = tk.StringVar()
+        self.text_stats = tk.StringVar()
+
+        self.text_frame.grid(row=1, column=0, sticky='news', padx=20, pady=30)
+        self.text_frame.rowconfigure([0, 1, 3, 4], weight=1)
+        self.text_frame.rowconfigure(2, weight=3)
+        self.text_frame.columnconfigure(0, weight=1)
+        self.text_frame.columnconfigure(1, weight=1)
+        tk.Label(self.text_frame, textvariable=self.text_card_name).grid(row=0, column=0, sticky='w')
+        tk.Label(self.text_frame, textvariable=self.text_type_name).grid(row=1, column=0, sticky='w')
+        tk.Label(self.text_frame, textvariable=self.text_text_name).grid(row=2, column=0, sticky='we', columnspan=2)
+        tk.Label(self.text_frame, textvariable=self.text_flavor).grid(row=3, column=0, sticky='we', columnspan=2)
+        tk.Label(self.text_frame, textvariable=self.text_set_name).grid(row=0, column=1, sticky='e')
+        tk.Label(self.text_frame, textvariable=self.text_stats).grid(row=4, column=1, sticky='es')
 
         # Separator
         ttk.Separator(self.window, orient=tk.VERTICAL).grid(column=1, row=1, sticky='ns')
@@ -62,15 +79,33 @@ class Client:
             img = Image.open(resp)
             img = img.resize((300, 418), Image.ANTIALIAS)
             card_art = ImageTk.PhotoImage(img)
-            label = tk.Label(self.card_frame, image=card_art, bg="blue")
+            label = tk.Label(self.card_frame, image=card_art)
             label.image = card_art
 
             label.grid(row=0, column=0, sticky='news')
 
         except requests.exceptions.RequestException:
-            label = tk.Label(self.card_frame, text="Image not found")
+            label = tk.Label(self.card_frame, text="Image not found", font=("calibri", 25))
             label.grid(row=0, column=0, sticky='news')
 
+        # Compile some info for some of the labels
+        if card.subtypes is not None:
+            ctypes = card.type + " -"
+            for stype in card.subtypes:
+                ctypes = ctypes + " " + stype
+        else:
+            ctypes = card.type
 
+        if card.power is not None:
+            stats = card.power + '/' + card.toughness
+        else:
+            stats = ""
+
+        self.text_card_name.set(card.name)
+        self.text_set_name.set(card.set)
+        self.text_type_name.set(ctypes)
+        self.text_text_name.set(card.text)
+        self.text_flavor.set(card.flavor)
+        self.text_stats.set(stats)
 
 
