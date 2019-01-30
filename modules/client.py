@@ -2,8 +2,11 @@
 
 import tkinter as tk
 from tkinter import ttk
-from tkinter import font as tkfont
-import modules.mtgcards as mtg
+import modules.search_tab
+from PIL import Image, ImageTk
+import requests
+# from tkinter import font as tkfont
+# import modules.mtgcards as mtg
 import re
 
 
@@ -29,77 +32,105 @@ class Client:
 
         # menu_bar
         # Card View Frame
+        self.card_frame = tk.Frame(self.window)
+        self.card_frame.grid_propagate(False)
+        self.card_frame.rowconfigure(0, weight=4)
+        self.card_frame.rowconfigure(1, weight=3)
+        self.card_frame.columnconfigure(0, weight=1)
+        self.card_frame.grid_propagate(False)
+
+        self.card_art_frame = tk.Frame(self.card_frame)
+        self.card_art_frame.grid(row=0, column=0, sticky='news')
+        self.card_art_frame.grid_propagate(False)
+        self.card_art_frame.rowconfigure(0, weight=1)
+        self.card_art_frame.columnconfigure(0, weight=1)
+
+        self.card_art_label = tk.Label(self.card_art_frame, font=("calibri", 25))
+        self.card_art_label.grid(row=0, column=0, sticky='news')
+
+        self.text_frame = tk.Frame(self.card_frame)
+        self.text_card_name = tk.StringVar()
+        self.text_set_name = tk.StringVar()
+        self.text_cost = tk.StringVar()
+        self.text_type_name = tk.StringVar()
+        self.text_text = tk.StringVar()
+        self.text_flavor = tk.StringVar()
+        self.text_stats = tk.StringVar()
+
+        self.text_frame.grid(row=1, column=0, sticky='news', padx=20, pady=30)
+        self.text_frame.grid_propagate(False)
+        self.text_frame.rowconfigure([0, 1, 4], weight=1)
+        self.text_frame.rowconfigure([2, 3], weight=3)
+        self.text_frame.columnconfigure(0, weight=1)
+        self.text_frame.columnconfigure(1, weight=1)
+        tk.Label(self.text_frame, textvariable=self.text_card_name, font=("arial", "16", "bold")).\
+            grid(row=0, column=0, sticky='w')
+        tk.Label(self.text_frame, textvariable=self.text_type_name).grid(row=1, column=0, sticky='w')
+        tk.Label(self.text_frame, textvariable=self.text_text, wraplength=400).\
+            grid(row=2, column=0, sticky='we', columnspan=2)
+        tk.Label(self.text_frame, textvariable=self.text_flavor, font=("arial", "10", "italic"), wraplength=400)\
+            .grid(row=3, column=0, sticky='we', columnspan=2)
+        tk.Label(self.text_frame, textvariable=self.text_set_name).grid(row=1, column=1, sticky='e')
+        tk.Label(self.text_frame, textvariable=self.text_cost).grid(row=0, column=1, sticky='e')
+        tk.Label(self.text_frame, textvariable=self.text_stats, font=("arial", "14", "bold")).\
+            grid(row=4, column=1, sticky='es')
+
         # Separator
         ttk.Separator(self.window, orient=tk.VERTICAL).grid(column=1, row=1, sticky='ns')
         # Tab Frame
-        tab_frame = ttk.Notebook(self.window)
-        search_frame = SearchFrame(tab_frame)
-        inventory_frame = tk.Frame(tab_frame)
-        deck_frame = tk.Frame(tab_frame)
-        tab_frame.add(search_frame, text="Search")
-        tab_frame.add(inventory_frame, text="Inventory")
-        tab_frame.add(deck_frame, text="Decks")
-        tab_frame.grid_propagate(False)
+        self.tab_frame = ttk.Notebook(self.window)
+        search_frame = modules.search_tab.SearchFrame(self)
+        inventory_frame = tk.Frame(self.tab_frame)
+        deck_frame = tk.Frame(self.tab_frame)
+        self.tab_frame.add(search_frame, text="Search")
+        self.tab_frame.add(inventory_frame, text="Inventory")
+        self.tab_frame.add(deck_frame, text="Decks")
+        self.tab_frame.grid_propagate(False)
 
-        tab_frame.grid(row=0, column=0, rowspan=100, sticky='news', padx=20, pady=30)
+        self.tab_frame.grid(row=0, column=0, rowspan=100, sticky='news', padx=20, pady=30)
+        self.card_frame.grid(row=0, column=99, rowspan=100, sticky='news', padx=20, pady=30)
 
+    def update_display(self, card):
+        url = card.image_url
+        try:
+            resp = requests.get(url, stream=True).raw
+            img = Image.open(resp)
+            img = img.resize((300, 418), Image.ANTIALIAS)
+            card_art = ImageTk.PhotoImage(img)
+            self.card_art_label.config(text="", image=card_art)
+            self.card_art_label.image = card_art
+            # label = tk.Label(self.card_frame, image=card_art)
+            # label.image = card_art
 
-class SearchFrame(tk.Frame):
-    def __init__(self, tabs_frame):
-        tk.Frame.__init__(self, tabs_frame)
+            # label.grid(row=0, column=0, sticky='news')
 
-        # 2 main elements, search frame with options and the listbox
-        self.search_frame = tk.Frame(self)
-        self.list = tk.Listbox(self, font='TkFixedFont')
+        except requests.exceptions.RequestException:
+            # label = tk.Label(self.card_frame, text="Image not found", font=("calibri", 25))
+            # label.grid(row=0, column=0, sticky='news')
+            self.card_art_label.config(text="Image not found", image='')
 
-        self.columnconfigure(10, weight=1)
-        self.rowconfigure(0, weight=5)
-        self.rowconfigure(10, weight=15)
-        self.rowconfigure(99, weight=0)
+        # Compile some info for some of the labels
 
-        self.search_frame.grid(row=0, column=10, sticky='news')
-        self.list.grid(row=10, column=10, sticky='news')
+        if card.power is not None:
+            stats = card.power + '/' + card.toughness
+        else:
+            stats = ""
 
-        # Search frame stuff settings
-        self.search_frame.columnconfigure([0, 1, 2, 3, 4], weight=1)
-        self.search_frame.rowconfigure([0, 1, 2, 3, 4], weight=1)
+        if card.flavor is None:
+            flavor = ""
+        else:
+            flavor = card.flavor
 
-        self.search_name = tk.Entry(self.search_frame)
-        # self.search.insert(tk.END, "Card Name")
-        self.search_button = tk.Button(self.search_frame, text="search", command=self.search_mtg, width=15)
-
-        self.search_name.grid(row=0, columnspan=5, column=0, sticky='new', padx=10, pady=10)
-        self.search_button.grid(row=0, column=99, sticky="ne", padx=10, pady=10)
-
-    def search_mtg(self):
-        name = self.search_name.get()
-        if name is "":
-            return
-        cards = mtg.fetch(name)
-        self.list.delete(first=0, last=tk.END)
-        for card in cards:
-            self.card_found(card)
-
-    def card_found(self, card):
-        # Sort elements by their properties and spacing
         mana = card.mana_cost
         if mana is None:
             mana = "-"
 
-        elements = [[card.name, 50],
-                    [card.set_name, 45],
-                    [card.rarity[0], 5],
-                    [re.sub(r'[{}]', "", mana), 0]]
-
-        card_data = ""
-        for item in elements:
-            try:
-                card_data += item[0] + " " * (item[1] - len(item[0]))
-
-            except TypeError:
-                card_data += "-" + " " * (50 - len("-"))
-
-        self.list.insert(tk.END, card_data)
-
+        self.text_card_name.set(card.name)
+        self.text_set_name.set(card.set)
+        self.text_cost.set(re.sub(r'[{}]', "", mana))
+        self.text_type_name.set(card.type)
+        self.text_text.set(card.text)
+        self.text_flavor.set(flavor)
+        self.text_stats.set(stats)
 
 
