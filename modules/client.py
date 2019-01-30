@@ -53,7 +53,7 @@ class Client:
         self.text_set_name = tk.StringVar()
         self.text_cost = tk.StringVar()
         self.text_type_name = tk.StringVar()
-        self.text_text_name = tk.StringVar()
+        self.text_text = tk.StringVar()
         self.text_flavor = tk.StringVar()
         self.text_stats = tk.StringVar()
 
@@ -66,11 +66,12 @@ class Client:
         tk.Label(self.text_frame, textvariable=self.text_card_name, font=("arial", "16", "bold")).\
             grid(row=0, column=0, sticky='w')
         tk.Label(self.text_frame, textvariable=self.text_type_name).grid(row=1, column=0, sticky='w')
-        tk.Label(self.text_frame, textvariable=self.text_text_name).grid(row=2, column=0, sticky='we', columnspan=2)
-        tk.Label(self.text_frame, textvariable=self.text_flavor, font=("arial", "10", "italic"))\
+        tk.Label(self.text_frame, textvariable=self.text_text, wraplength=400).\
+            grid(row=2, column=0, sticky='we', columnspan=2)
+        tk.Label(self.text_frame, textvariable=self.text_flavor, font=("arial", "10", "italic"), wraplength=400)\
             .grid(row=3, column=0, sticky='we', columnspan=2)
-        tk.Label(self.text_frame, textvariable=self.text_set_name).grid(row=0, column=1, sticky='e')
-        tk.Label(self.text_frame, textvariable=self.text_cost).grid(row=1, column=1, sticky='e')
+        tk.Label(self.text_frame, textvariable=self.text_set_name).grid(row=1, column=1, sticky='e')
+        tk.Label(self.text_frame, textvariable=self.text_cost).grid(row=0, column=1, sticky='e')
         tk.Label(self.text_frame, textvariable=self.text_stats, font=("arial", "14", "bold")).\
             grid(row=4, column=1, sticky='es')
 
@@ -128,7 +129,7 @@ class Client:
         self.text_set_name.set(card.set)
         self.text_cost.set(re.sub(r'[{}]', "", mana))
         self.text_type_name.set(card.type)
-        self.text_text_name.set(card.text)
+        self.text_text.set(card.text)
         self.text_flavor.set(flavor)
         self.text_stats.set(stats)
 
