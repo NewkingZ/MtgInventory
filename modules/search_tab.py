@@ -32,7 +32,7 @@ class SearchFrame(tk.Frame):
 
         self.search_name = tk.Entry(self.search_frame)
         # self.search.insert(tk.END, "Card Name")
-        self.search_button = tk.Button(self.search_frame, text="search", command=self.search_mtg, width=15)
+        self.search_button = tk.Button(self.search_frame, text="Search", command=self.search_mtg, width=15)
 
         self.search_name.grid(row=0, columnspan=5, column=0, sticky='new', padx=10, pady=10)
         self.search_button.grid(row=0, column=99, sticky="ne", padx=10, pady=10)
