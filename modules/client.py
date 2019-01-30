@@ -7,7 +7,7 @@ from PIL import Image, ImageTk
 import requests
 # from tkinter import font as tkfont
 # import modules.mtgcards as mtg
-# import re
+import re
 
 
 def print_crap():
@@ -39,9 +39,19 @@ class Client:
         self.card_frame.columnconfigure(0, weight=1)
         self.card_frame.grid_propagate(False)
 
+        self.card_art_frame = tk.Frame(self.card_frame)
+        self.card_art_frame.grid(row=0, column=0, sticky='news')
+        self.card_art_frame.grid_propagate(False)
+        self.card_art_frame.rowconfigure(0, weight=1)
+        self.card_art_frame.columnconfigure(0, weight=1)
+
+        self.card_art_label = tk.Label(self.card_art_frame, font=("calibri", 25))
+        self.card_art_label.grid(row=0, column=0, sticky='news')
+
         self.text_frame = tk.Frame(self.card_frame)
         self.text_card_name = tk.StringVar()
         self.text_set_name = tk.StringVar()
+        self.text_cost = tk.StringVar()
         self.text_type_name = tk.StringVar()
         self.text_text_name = tk.StringVar()
         self.text_flavor = tk.StringVar()
@@ -49,17 +59,20 @@ class Client:
 
         self.text_frame.grid(row=1, column=0, sticky='news', padx=20, pady=30)
         self.text_frame.grid_propagate(False)
-        self.text_frame.rowconfigure([0, 1, 3, 4], weight=1)
-        self.text_frame.rowconfigure(2, weight=3)
+        self.text_frame.rowconfigure([0, 1, 4], weight=1)
+        self.text_frame.rowconfigure([2, 3], weight=3)
         self.text_frame.columnconfigure(0, weight=1)
         self.text_frame.columnconfigure(1, weight=1)
-        tk.Label(self.text_frame, textvariable=self.text_card_name).grid(row=0, column=0, sticky='w')
+        tk.Label(self.text_frame, textvariable=self.text_card_name, font=("arial", "16", "bold")).\
+            grid(row=0, column=0, sticky='w')
         tk.Label(self.text_frame, textvariable=self.text_type_name).grid(row=1, column=0, sticky='w')
         tk.Label(self.text_frame, textvariable=self.text_text_name).grid(row=2, column=0, sticky='we', columnspan=2)
-        tk.Label(self.text_frame, textvariable=self.text_flavor, font=("courier", "10", "italic"))\
+        tk.Label(self.text_frame, textvariable=self.text_flavor, font=("arial", "10", "italic"))\
             .grid(row=3, column=0, sticky='we', columnspan=2)
         tk.Label(self.text_frame, textvariable=self.text_set_name).grid(row=0, column=1, sticky='e')
-        tk.Label(self.text_frame, textvariable=self.text_stats).grid(row=4, column=1, sticky='es')
+        tk.Label(self.text_frame, textvariable=self.text_cost).grid(row=1, column=1, sticky='e')
+        tk.Label(self.text_frame, textvariable=self.text_stats, font=("arial", "14", "bold")).\
+            grid(row=4, column=1, sticky='es')
 
         # Separator
         ttk.Separator(self.window, orient=tk.VERTICAL).grid(column=1, row=1, sticky='ns')
@@ -83,14 +96,17 @@ class Client:
             img = Image.open(resp)
             img = img.resize((300, 418), Image.ANTIALIAS)
             card_art = ImageTk.PhotoImage(img)
-            label = tk.Label(self.card_frame, image=card_art)
-            label.image = card_art
+            self.card_art_label.config(text="", image=card_art)
+            self.card_art_label.image = card_art
+            # label = tk.Label(self.card_frame, image=card_art)
+            # label.image = card_art
 
-            label.grid(row=0, column=0, sticky='news')
+            # label.grid(row=0, column=0, sticky='news')
 
         except requests.exceptions.RequestException:
-            label = tk.Label(self.card_frame, text="Image not found", font=("calibri", 25))
-            label.grid(row=0, column=0, sticky='news')
+            # label = tk.Label(self.card_frame, text="Image not found", font=("calibri", 25))
+            # label.grid(row=0, column=0, sticky='news')
+            self.card_art_label.config(text="Image not found", image='')
 
         # Compile some info for some of the labels
 
@@ -99,11 +115,21 @@ class Client:
         else:
             stats = ""
 
+        if card.flavor is None:
+            flavor = ""
+        else:
+            flavor = card.flavor
+
+        mana = card.mana_cost
+        if mana is None:
+            mana = "-"
+
         self.text_card_name.set(card.name)
         self.text_set_name.set(card.set)
+        self.text_cost.set(re.sub(r'[{}]', "", mana))
         self.text_type_name.set(card.type)
         self.text_text_name.set(card.text)
-        self.text_flavor.set(card.flavor)
+        self.text_flavor.set(flavor)
         self.text_stats.set(stats)
 
 
