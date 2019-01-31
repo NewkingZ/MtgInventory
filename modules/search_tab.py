@@ -10,25 +10,45 @@ class SearchFrame(tk.Frame):
     def __init__(self, client):
         tk.Frame.__init__(self, client.tab_frame)
 
-        # 2 main elements, search frame with options and the listbox
+        # 3 main elements:
+        #  Search frame with entry and search button
+        #  Filter frame with filter options + headers
+        #  Listbox with search results
         self.search_frame = tk.Frame(self)
         self.client = client
-        self.list = tk.Listbox(self, font='TkFixedFont')
         self.filter = tk.Frame(self)
+        self.list = tk.Listbox(self, font='TkFixedFont')
+        scrollbar = tk.Scrollbar(self.list, orient="vertical")
+        self.list.config(yscrollcommand=scrollbar.set)
+        scrollbar.config(command=self.list.yview)
+        header_titles = "Name" + (" "*46) + "Set" + " "*42 + "Rarity" + "  " + "Mana cost"
+        list_header = tk.Label(self.filter, text=header_titles, font='TkFixedFont')
 
+        # Grid settings for the whole search tab
         self.columnconfigure(10, weight=1)
         self.rowconfigure(0, weight=0)
-        self.rowconfigure(5, weight=5)
+        self.rowconfigure(5, weight=3)
         self.rowconfigure(10, weight=15)
         self.rowconfigure(99, weight=0)
 
+        # Grid settings for the search frame (Entry, search button)
         self.search_frame.grid(row=0, column=10, sticky='news')
-        self.filter.grid(row=5, column=10, sticky='news')
-        self.list.grid(row=10, column=10, sticky='news')
-
-        # Search frame stuff settings
         self.search_frame.columnconfigure([0, 1, 2, 3, 4], weight=1)
         self.search_frame.rowconfigure([0, 1, 2, 3, 4], weight=1)
+
+        # Filter Frame
+        self.filter.rowconfigure(0, weight=1)
+        self.filter.columnconfigure(0, weight=1)
+        self.filter.grid(row=5, column=10, sticky='news')
+        self.filter.grid_propagate(False)
+
+        list_header.grid(row=0, column=0, sticky='ws')
+
+        # Grid settings for the listbox
+        self.list.columnconfigure(0, weight=1)
+        self.list.rowconfigure(0, weight=1)
+        self.list.grid(row=10, column=10, sticky='news')
+        scrollbar.grid(row=0, column=1, sticky='ns')
 
         self.search_name = tk.Entry(self.search_frame)
         # self.search.insert(tk.END, "Card Name")
@@ -39,11 +59,11 @@ class SearchFrame(tk.Frame):
         self.results = []
         self.currently_shown = None
 
-        def on_select(evt):
+        def on_list_select(evt):
             lb = evt.widget
             self.client.update_display(self.results[int(lb.curselection()[0])])
 
-        self.list.bind('<<ListboxSelect>>', on_select)
+        self.list.bind('<<ListboxSelect>>', on_list_select)
 
     def search_mtg(self):
         name = self.search_name.get()
@@ -63,7 +83,7 @@ class SearchFrame(tk.Frame):
 
         elements = [[card.name, 50],
                     [card.set_name, 45],
-                    [card.rarity[0], 5],
+                    [card.rarity[0], 8],
                     [re.sub(r'[{}]', "", mana), 0]]
 
         card_data = ""
