@@ -37,12 +37,14 @@ class SearchFrame(tk.Frame):
         self.search_frame.rowconfigure([0, 1, 2, 3, 4], weight=1)
 
         # Filter Frame
-        self.filter.rowconfigure(0, weight=1)
-        self.filter.columnconfigure(0, weight=1)
+        self.filter.rowconfigure([5, 10], weight=1)
+        self.filter.columnconfigure(10, weight=1)
         self.filter.grid(row=5, column=10, sticky='news')
         self.filter.grid_propagate(False)
+        tk.Label(self.filter, text="This section is dedicated to filter options which will be implemented later",
+                 font=("Arial", "10", "bold")).grid(row=5, column=10, sticky='news')
 
-        list_header.grid(row=0, column=0, sticky='ws')
+        list_header.grid(row=10, column=10, sticky='ws')
 
         # Grid settings for the listbox
         self.list.columnconfigure(0, weight=1)
@@ -60,10 +62,17 @@ class SearchFrame(tk.Frame):
         self.currently_shown = None
 
         def on_list_select(evt):
-            lb = evt.widget
-            self.client.update_display(self.results[int(lb.curselection()[0])])
+            # Index Error occurs when double clicking the Search Entry field after having selected a card
+            try:
+                self.client.update_display(self.results[int(self.list.curselection()[0])])
+            except IndexError:
+                pass
+
+        def on_search_select(evt):
+            self.search_name.select_range(0, tk.END)
 
         self.list.bind('<<ListboxSelect>>', on_list_select)
+        self.search_name.bind('<FocusIn>', on_search_select)
 
     def search_mtg(self):
         name = self.search_name.get()
