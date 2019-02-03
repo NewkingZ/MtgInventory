@@ -86,9 +86,17 @@ class Client:
         self.tab_frame.add(inventory_frame, text="Inventory")
         self.tab_frame.add(deck_frame, text="Decks")
         self.tab_frame.grid_propagate(False)
+        self.tabs = [search_frame, inventory_frame, deck_frame]
 
         self.tab_frame.grid(row=0, column=0, rowspan=100, sticky='news', padx=20, pady=30)
         self.card_frame.grid(row=0, column=99, rowspan=100, sticky='news', padx=20, pady=30)
+
+        # Define enter pressed function here
+        def enter_pressed(evt):
+            tab_selected = self.tabs[self.tab_frame.index(self.tab_frame.select())]
+            tab_selected.enter_pressed()
+
+        self.window.bind('<Return>', enter_pressed)
 
     def update_display(self, card):
         url = card.image_url

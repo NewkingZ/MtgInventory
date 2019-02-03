@@ -104,3 +104,6 @@ class SearchFrame(tk.Frame):
                 card_data += "-" + " " * (50 - len("-"))
 
         self.list.insert(tk.END, card_data)
+
+    def enter_pressed(self):
+        self.search_mtg()
