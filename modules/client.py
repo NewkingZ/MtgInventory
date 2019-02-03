@@ -66,7 +66,7 @@ class Client:
         tk.Label(self.text_frame, textvariable=self.text_card_name, font=("arial", "16", "bold")).\
             grid(row=0, column=0, sticky='w')
         tk.Label(self.text_frame, textvariable=self.text_type_name).grid(row=1, column=0, sticky='w')
-        tk.Label(self.text_frame, textvariable=self.text_text, wraplength=400).\
+        tk.Label(self.text_frame, textvariable=self.text_text, wraplength=350).\
             grid(row=2, column=0, sticky='we', columnspan=2)
         tk.Label(self.text_frame, textvariable=self.text_flavor, font=("arial", "10", "italic"), wraplength=400)\
             .grid(row=3, column=0, sticky='we', columnspan=2)
@@ -94,7 +94,7 @@ class Client:
         # Define enter pressed function here
         def enter_pressed(evt):
             tab_selected = self.tabs[self.tab_frame.index(self.tab_frame.select())]
-            tab_selected.enter_pressed()
+            tab_selected.enter_pressed(evt)
 
         self.window.bind('<Return>', enter_pressed)
 

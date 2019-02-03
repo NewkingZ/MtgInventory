@@ -105,5 +105,9 @@ class SearchFrame(tk.Frame):
 
         self.list.insert(tk.END, card_data)
 
-    def enter_pressed(self):
-        self.search_mtg()
+    def enter_pressed(self, evt):
+        # When the enter button is pressed, this command will run.
+        # Confirm the text box is selected before searching for the cards
+        print(evt.widget)
+        if evt.widget is self.search_name:
+            self.search_mtg()
