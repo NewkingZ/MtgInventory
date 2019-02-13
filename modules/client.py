@@ -3,6 +3,7 @@
 import tkinter as tk
 from tkinter import ttk
 import modules.search_tab
+import modules.inventory_tab
 from PIL import Image, ImageTk
 import requests
 # from tkinter import font as tkfont
@@ -80,7 +81,8 @@ class Client:
         # Tab Frame
         self.tab_frame = ttk.Notebook(self.window)
         search_frame = modules.search_tab.SearchFrame(self)
-        inventory_frame = tk.Frame(self.tab_frame)
+        # inventory_frame = tk.Frame(self.tab_frame)
+        inventory_frame = modules.inventory_tab.InventoryFrame(self)
         deck_frame = tk.Frame(self.tab_frame)
         self.tab_frame.add(search_frame, text="Search")
         self.tab_frame.add(inventory_frame, text="Inventory")
