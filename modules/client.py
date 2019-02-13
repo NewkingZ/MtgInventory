@@ -69,7 +69,7 @@ class Client:
         tk.Label(self.text_frame, textvariable=self.text_type_name).grid(row=1, column=0, sticky='w')
         tk.Label(self.text_frame, textvariable=self.text_text, wraplength=350).\
             grid(row=2, column=0, sticky='we', columnspan=2)
-        tk.Label(self.text_frame, textvariable=self.text_flavor, font=("arial", "10", "italic"), wraplength=400)\
+        tk.Label(self.text_frame, textvariable=self.text_flavor, font=("arial", "10", "italic"), wraplength=350)\
             .grid(row=3, column=0, sticky='we', columnspan=2)
         tk.Label(self.text_frame, textvariable=self.text_set_name).grid(row=1, column=1, sticky='e')
         tk.Label(self.text_frame, textvariable=self.text_cost).grid(row=0, column=1, sticky='e')
