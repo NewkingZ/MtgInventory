@@ -34,7 +34,6 @@ class Client:
         # menu_bar
         # Card View Frame
         self.card_frame = tk.Frame(self.window)
-        self.card_frame.grid_propagate(False)
         self.card_frame.rowconfigure(0, weight=4)
         self.card_frame.rowconfigure(1, weight=3)
         self.card_frame.columnconfigure(0, weight=1)

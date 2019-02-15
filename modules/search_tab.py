@@ -9,7 +9,7 @@ import re
 class SearchFrame(tk.Frame):
     def __init__(self, client):
         tk.Frame.__init__(self, client.tab_frame)
-
+        self.grid_propagate(False)
         # 3 main elements:
         #  Search frame with entry and search button
         #  Filter frame with filter options + headers
@@ -40,7 +40,6 @@ class SearchFrame(tk.Frame):
         self.filter.rowconfigure([5, 10], weight=1)
         self.filter.columnconfigure(10, weight=1)
         self.filter.grid(row=5, column=10, sticky='news')
-        self.filter.grid_propagate(False)
         tk.Label(self.filter, text="This section is dedicated to filter options which will be implemented later",
                  font=("Arial", "10", "bold")).grid(row=5, column=10, sticky='news')
 
