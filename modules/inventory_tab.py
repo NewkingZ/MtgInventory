@@ -13,14 +13,13 @@ class InventoryFrame(tk.Frame):
     def __init__(self, client):
         tk.Frame.__init__(self, client.tab_frame)
         self.search_frame = tk.Frame(self)
-        self.propagate(False)
+        self.grid_propagate(False)
         self.client = client
 
         # Set up listbox and search methods
         self.search_frame = tk.Frame(self)
-        group_label = tk.Label(self.search_frame, text="Group")
         self.group_var = tk.StringVar(self.search_frame)
-        self.group_menu = tk.OptionMenu(self.search_frame, self.group_var, "Select group to search")
+        self.group_menu = tk.OptionMenu(self.search_frame, self.group_var, ALL)
         self.group_menu.config(height=1, width=20)
         self.group_var.set(ALL)
 
@@ -34,8 +33,8 @@ class InventoryFrame(tk.Frame):
 
         # Maybe remove set from headers for set code instead
 
-        # header_titles = "test"
-        header_titles = "Name" + (" " * 46) + "Set" + " " * 42 + "Rarity" + "  " + "Mana cost"
+        # Place name, set code, cost, rarity, group location
+        header_titles = "Name" + " " * 46 + "Set" + " " * 6 + "Rarity" + "    " + "Mana cost" + " " * 8 + "Location"
         header_label = tk.Label(self.search_frame, text=header_titles, font='TkFixedFont')
 
         # Configure columns and rows for main frame:
@@ -44,7 +43,7 @@ class InventoryFrame(tk.Frame):
         self.columnconfigure(10, weight=1)
 
         # Place main elements
-        self.search_frame.grid(row=10, column=10, sticky='news')
+        self.search_frame.grid(row=10, column=10, sticky='news', pady=(10, 0))
         self.list.grid(row=50, column=10, columnspan=71, sticky='news')
         self.list.columnconfigure(0, weight=1)
         self.list.rowconfigure(0, weight=1)
@@ -53,11 +52,12 @@ class InventoryFrame(tk.Frame):
         # Configure columns and rows for search frame:
         self.search_frame.rowconfigure([10, 20], weight=1)
         self.search_frame.columnconfigure([10, 20, 30, 40, 50, 60, 70, 80], weight=1)
-        # sself.search_frame.grid_propagate(False)
+        # self.search_frame.grid_propagate(False)
 
         # Place Search frame elements
-        group_label.grid(row=9, column=10, sticky='we')
         self.group_menu.grid(row=10, column=10, sticky='we', padx=15)
         self.fetch.grid(row=10, column=20, sticky='w')
         self.manage.grid(row=10, column=80, sticky='e', padx=10)
-        header_label.grid(row=20, column=10, columnspan=71, sticky='w')
+        header_label.grid(row=20, column=10, columnspan=71, sticky='ws')
+
+        # Excel initialize

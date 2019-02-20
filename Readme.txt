@@ -1,19 +1,17 @@
 Major Goals
-Gui design and layout
-database research and implementation
-Run some tests on the database
+Card lookup engine (search)
+Inventory and grouping
+Deck listings
 
 
 Features to implement:
 Account based info
 deck building from inventory
 Inventory management:
-	->Total count vs what are in decks and what are in the dump
+	->Total count vs what are in decks and what are in the dump (library)
 Card display
-Search capabilities
-Different card storage card locations settable by the user
-Deck Price Tracking (weekly?)
-	-> Foils
+Search engine
+Different card storage slocations settable by the user
 Wishlist
 
 For searching:

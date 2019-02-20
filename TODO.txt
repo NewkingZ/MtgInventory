@@ -1,0 +1,18 @@
+TODO:
+
+General
+- Icon
+- Menu bar
+
+Search Tab:
+- Filters
+- Add To (inventory group)
+
+Inventory Tab
+- Setup Excel sheet and storage structure
+- Add group management
+- Inventory filtering
+
+Decks Tab
+- Entirety of features
+
