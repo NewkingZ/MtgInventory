@@ -1,4 +1,5 @@
 .idea/
 venv/
 modules/__pycache__/
+storage/
 *.pdn

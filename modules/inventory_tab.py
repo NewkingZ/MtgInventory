@@ -1,12 +1,35 @@
 # Inventory tab to keep a count on owned cards
 import tkinter as tk
+import os.path
 
 
 ALL = "Library"
+INVENTORY = "./storage/inventory.csv"
+CARD = "CARD"
+GROUP = "GROUP"
 
 
 def print_nyan():
     print("Nyanpasu!")
+
+
+def get_groups():
+    groups = []
+    check_inventory_file()
+    inv = open(INVENTORY, "r+")
+    for line in inv.readlines():
+        item_type = line.split(",")[0]
+        if item_type == GROUP:
+            groups.append(line.split(",")[1].rstrip())
+    return groups
+
+
+def check_inventory_file():
+    if not os.path.isdir("./storage"):
+        os.mkdir("./storage", 0o755)
+    if not os.path.exists(INVENTORY):
+        file = open(INVENTORY, "w+")
+        file.close()
 
 
 class InventoryFrame(tk.Frame):
@@ -24,7 +47,7 @@ class InventoryFrame(tk.Frame):
         self.group_var.set(ALL)
 
         self.fetch = tk.Button(self.search_frame, text="Fetch", command=print_nyan, width=15, height=1)
-        self.manage = tk.Button(self.search_frame, text="Manage Groups", command=print_nyan, width=15, height=1)
+        self.manage = tk.Button(self.search_frame, text="Manage Groups", command=self.manage_groups, width=15, height=1)
 
         self.list = tk.Listbox(self, font='TkFixedFont')
         scrollbar = tk.Scrollbar(self.list, orient="vertical")
@@ -61,3 +84,31 @@ class InventoryFrame(tk.Frame):
         header_label.grid(row=20, column=10, columnspan=71, sticky='ws')
 
         # Excel initialize
+        check_inventory_file()
+
+    def manage_groups(self):
+        manage = tk.Toplevel(self.client.window)
+        manage.wm_title("Manage Groups")
+        # manage.geometry("400x75")
+        manage.resizable(False, False)
+
+        # Requires 4 things: Entry + add, dropdown + remove
+        dropdown_var = tk.StringVar(manage)
+        dropdown_var.set("Select a group")
+        groups = get_groups()
+
+        add_button = tk.Button(manage, text="Add", height=1, width=15)
+        remove_button = tk.Button(manage, text="Remove", height=1, width=15)
+
+        entry = tk.Entry(manage)
+        dropdown = tk.OptionMenu(manage, dropdown_var, *groups)
+        dropdown.config(width=40)
+
+        manage.rowconfigure([0, 1], weight=1)
+        manage.columnconfigure(0, weight=4)
+        manage.columnconfigure(1, weight=1)
+
+        entry.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
+        dropdown.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
+        add_button.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
+        remove_button.grid(row=1, column=1, sticky="ew", padx=5, pady=5)
