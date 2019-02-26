@@ -39,11 +39,14 @@ class InventoryFrame(tk.Frame):
         self.search_frame = tk.Frame(self)
         self.grid_propagate(False)
         self.client = client
+        self.groups = []
+        for option in get_groups():
+            self.groups.append(option)
 
         # Set up listbox and search methods
         self.search_frame = tk.Frame(self)
         self.group_var = tk.StringVar(self.search_frame)
-        self.group_menu = tk.OptionMenu(self.search_frame, self.group_var, ALL)
+        self.group_menu = tk.OptionMenu(self.search_frame, self.group_var, *self.groups)
         self.group_menu.config(height=1, width=20)
         self.group_var.set(ALL)
 
@@ -97,18 +100,17 @@ class InventoryFrame(tk.Frame):
         # Requires 4 things: Entry + add, dropdown + remove
         dropdown_var = tk.StringVar(manage)
         dropdown_var.set("Select a group")
-        groups = get_groups()
 
         def accept():
             # Check if entered text is valid
             new = entry.get()
-            if new == "" or new.find(',') != -1 or new in groups:
+            if new == "" or new.find(',') != -1 or new in self.groups:
                 return
             inv = open(INVENTORY, "a")
             inv.write(GROUP + "," + entry.get() + "\n")
             inv.close()
             entry.delete(0, "end")
-            groups.append(new)
+            self.groups.append(new)
             update_menu()
 
         def remove():
@@ -126,21 +128,26 @@ class InventoryFrame(tk.Frame):
                 elif line.split(',')[1].rstrip('\r\n') != dropdown_var.get():
                     inv.write(line)
             inv.close()
-            groups.remove(dropdown_var.get())
+            self.groups.remove(dropdown_var.get())
             dropdown_var.set("Select a group")
             update_menu()
 
         def update_menu():
+            main_menu = self.group_menu["menu"]
             menu = dropdown["menu"]
+            main_menu.delete(0, "end")
             menu.delete(0, "end")
-            for option in groups:
+            main_menu.add_command(label=ALL, command=self.group_var.set(ALL))
+            print(self.groups)
+            for option in self.groups:
                 menu.add_command(label=option, command=lambda value=option: dropdown_var.set(value))
+                main_menu.add_command(label=option, command=lambda value=option: self.group_var.set(value))
 
         add_button = tk.Button(manage, text="Add", height=1, width=15, command=accept)
         remove_button = tk.Button(manage, text="Remove", height=1, width=15, command=remove)
 
         entry = tk.Entry(manage)
-        dropdown = tk.OptionMenu(manage, dropdown_var, *groups)
+        dropdown = tk.OptionMenu(manage, dropdown_var, *self.groups)
         dropdown.config(width=40)
 
         manage.rowconfigure([0, 1], weight=1)
