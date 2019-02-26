@@ -21,6 +21,7 @@ def get_groups():
         item_type = line.split(",")[0]
         if item_type == GROUP:
             groups.append(line.split(",")[1].rstrip())
+    inv.close()
     return groups
 
 
@@ -91,14 +92,52 @@ class InventoryFrame(tk.Frame):
         manage.wm_title("Manage Groups")
         # manage.geometry("400x75")
         manage.resizable(False, False)
+        manage.grab_set()
 
         # Requires 4 things: Entry + add, dropdown + remove
         dropdown_var = tk.StringVar(manage)
         dropdown_var.set("Select a group")
         groups = get_groups()
 
-        add_button = tk.Button(manage, text="Add", height=1, width=15)
-        remove_button = tk.Button(manage, text="Remove", height=1, width=15)
+        def accept():
+            # Check if entered text is valid
+            new = entry.get()
+            if new == "" or new.find(',') != -1 or new in groups:
+                return
+            inv = open(INVENTORY, "a")
+            inv.write(GROUP + "," + entry.get() + "\n")
+            inv.close()
+            entry.delete(0, "end")
+            groups.append(new)
+            update_menu()
+
+        def remove():
+            # Check remove
+            if dropdown_var.get() == "Select a group":
+                return
+            inv = open(INVENTORY, "r+")
+            data = inv.readlines()
+            inv.close()
+
+            inv = open(INVENTORY, "w")
+            for line in data:
+                if line.split(',')[0] != GROUP:
+                    inv.write(line)
+                elif line.split(',')[1].rstrip('\r\n') != dropdown_var.get():
+                    inv.write(line)
+            inv.close()
+            groups.remove(dropdown_var.get())
+            dropdown_var.set("Select a group")
+            update_menu()
+
+        def update_menu():
+            menu = dropdown["menu"]
+            menu.delete(0, "end")
+            for option in groups:
+                menu.add_command(label=option, command=lambda value=option: dropdown_var.set(value))
+
+        add_button = tk.Button(manage, text="Add", height=1, width=15, command=accept)
+        remove_button = tk.Button(manage, text="Remove", height=1, width=15, command=remove)
 
         entry = tk.Entry(manage)
         dropdown = tk.OptionMenu(manage, dropdown_var, *groups)
