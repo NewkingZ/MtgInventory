@@ -46,9 +46,16 @@ class InventoryFrame(tk.Frame):
         # Set up listbox and search methods
         self.search_frame = tk.Frame(self)
         self.group_var = tk.StringVar(self.search_frame)
-        self.group_menu = tk.OptionMenu(self.search_frame, self.group_var, *self.groups)
+        # Weird bug where the value for the option menu won't work
+        # self.group_menu = tk.OptionMenu(self.search_frame, self.group_var, *self.groups)
+        self.group_menu = tk.OptionMenu(self.search_frame, self.group_var, [])
         self.group_menu.config(height=1, width=20)
         self.group_var.set(ALL)
+
+        self.group_menu["menu"].delete(0, "end")
+        self.group_menu["menu"].add_command(label=ALL, command=lambda value=ALL: self.group_var.set(value))
+        for option in self.groups:
+            self.group_menu["menu"].add_command(label=option, command=lambda value=option: self.group_var.set(value))
 
         self.fetch = tk.Button(self.search_frame, text="Fetch", command=print_nyan, width=15, height=1)
         self.manage = tk.Button(self.search_frame, text="Manage Groups", command=self.manage_groups, width=15, height=1)
@@ -134,11 +141,9 @@ class InventoryFrame(tk.Frame):
 
         def update_menu():
             main_menu = self.group_menu["menu"]
-            menu = dropdown["menu"]
             main_menu.delete(0, "end")
             menu.delete(0, "end")
             main_menu.add_command(label=ALL, command=self.group_var.set(ALL))
-            print(self.groups)
             for option in self.groups:
                 menu.add_command(label=option, command=lambda value=option: dropdown_var.set(value))
                 main_menu.add_command(label=option, command=lambda value=option: self.group_var.set(value))
@@ -147,7 +152,13 @@ class InventoryFrame(tk.Frame):
         remove_button = tk.Button(manage, text="Remove", height=1, width=15, command=remove)
 
         entry = tk.Entry(manage)
-        dropdown = tk.OptionMenu(manage, dropdown_var, *self.groups)
+        # Weird error occurs here as well
+        # dropdown = tk.OptionMenu(manage, dropdown_var, *self.groups)
+        dropdown = tk.OptionMenu(manage, dropdown_var, [])
+        menu = dropdown["menu"]
+        menu.delete(0, "end")
+        for group in self.groups:
+            self.group_menu["menu"].add_command(label=group, command=lambda value=group: dropdown_var.set(value))
         dropdown.config(width=40)
 
         manage.rowconfigure([0, 1], weight=1)
