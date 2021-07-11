@@ -1,36 +1,56 @@
 # Inventory tab to keep a count on owned cards
 import tkinter as tk
 import os.path
+import os
+import csv
 
 
 ALL = "Library"
-INVENTORY = "./storage/inventory.csv"
-CARD = "CARD"
-GROUP = "GROUP"
+STORAGE = "./storage/"
 
 
 def print_nyan():
     print("Nyanpasu!")
 
 
-def get_groups():
-    groups = []
-    check_inventory_file()
-    inv = open(INVENTORY, "r+")
-    for line in inv.readlines():
-        item_type = line.split(",")[0]
-        if item_type == GROUP:
-            groups.append(line.split(",")[1].rstrip())
-    inv.close()
-    return groups
+# Make a local collection
+def make_collection(name):
+    # Check to see if the file name has any problems, if its already there, etc...
+    if not name.isalnum():
+        print("name is not alphanumeric")
+        return
+
+    # Make the file
+    if name[:-4] != ".csv" or name[:-4] != ".CSV":
+        name = name + ".csv"
+
+    with open(STORAGE + name, "w+") as f:
+        writer = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+        writer.writerow(["CardName", "SetName", "MultiverseID", "Type", "SubType", "ColorID", "Cost",
+                         "JSONID", "Foil", "Qty"])
 
 
-def check_inventory_file():
-    if not os.path.isdir("./storage"):
-        os.mkdir("./storage", 0o755)
-    if not os.path.exists(INVENTORY):
-        file = open(INVENTORY, "w+")
-        file.close()
+def remove_collection(name):
+    # Check to see if the file exists
+    # TODO
+
+    if name[:-4] != ".csv" or name[:-4] != ".CSV":
+        name = name + ".csv"
+    os.remove(STORAGE + name)
+
+
+# Get a list of current collections
+def get_collections():
+    # Make sure the storage folder is available
+    if not os.path.isdir(STORAGE):
+        os.mkdir(STORAGE, 0o755)
+
+    # List out contents of storage
+    collections = []
+    for coll in os.listdir(STORAGE):
+        collections.append(coll[:-4])
+    return collections
 
 
 class InventoryFrame(tk.Frame):
@@ -39,26 +59,27 @@ class InventoryFrame(tk.Frame):
         self.search_frame = tk.Frame(self)
         self.grid_propagate(False)
         self.client = client
-        self.groups = []
-        for option in get_groups():
-            self.groups.append(option)
+        self.collections = []
+        for option in get_collections():
+            self.collections.append(option)
 
         # Set up listbox and search methods
         self.search_frame = tk.Frame(self)
         self.group_var = tk.StringVar(self.search_frame)
         # Weird bug where the value for the option menu won't work
-        # self.group_menu = tk.OptionMenu(self.search_frame, self.group_var, *self.groups)
+        # self.group_menu = tk.OptionMenu(self.search_frame, self.group_var, *self.collections)
         self.group_menu = tk.OptionMenu(self.search_frame, self.group_var, [])
         self.group_menu.config(height=1, width=20)
         self.group_var.set(ALL)
 
         self.group_menu["menu"].delete(0, "end")
         self.group_menu["menu"].add_command(label=ALL, command=lambda value=ALL: self.group_var.set(value))
-        for option in self.groups:
+        for option in self.collections:
             self.group_menu["menu"].add_command(label=option, command=lambda value=option: self.group_var.set(value))
 
         self.fetch = tk.Button(self.search_frame, text="Fetch", command=print_nyan, width=15, height=1)
-        self.manage = tk.Button(self.search_frame, text="Manage Groups", command=self.manage_groups, width=15, height=1)
+        self.manage = tk.Button(self.search_frame, text="Manage Collections", command=self.manage_collections, width=15,
+                                height=1)
 
         self.list = tk.Listbox(self, font='TkFixedFont')
         scrollbar = tk.Scrollbar(self.list, orient="vertical")
@@ -94,12 +115,9 @@ class InventoryFrame(tk.Frame):
         self.manage.grid(row=10, column=80, sticky='e', padx=10)
         header_label.grid(row=20, column=10, columnspan=71, sticky='ws')
 
-        # Excel initialize
-        check_inventory_file()
-
-    def manage_groups(self):
+    def manage_collections(self):
         manage = tk.Toplevel(self.client.window)
-        manage.wm_title("Manage Groups")
+        manage.wm_title("Manage Collections")
         # manage.geometry("400x75")
         manage.resizable(False, False)
         manage.grab_set()
@@ -111,31 +129,21 @@ class InventoryFrame(tk.Frame):
         def accept():
             # Check if entered text is valid
             new = entry.get()
-            if new == "" or new.find(',') != -1 or new in self.groups:
+            if new == "" or new.find(',') != -1 or new in self.collections:
                 return
-            inv = open(INVENTORY, "a")
-            inv.write(GROUP + "," + entry.get() + "\n")
-            inv.close()
+
             entry.delete(0, "end")
-            self.groups.append(new)
+            make_collection(new)
+            # self.collections.append(new)
             update_menu()
 
         def remove():
             # Check remove
             if dropdown_var.get() == "Select a group":
                 return
-            inv = open(INVENTORY, "r+")
-            data = inv.readlines()
-            inv.close()
 
-            inv = open(INVENTORY, "w")
-            for line in data:
-                if line.split(',')[0] != GROUP:
-                    inv.write(line)
-                elif line.split(',')[1].rstrip('\r\n') != dropdown_var.get():
-                    inv.write(line)
-            inv.close()
-            self.groups.remove(dropdown_var.get())
+            remove_collection(dropdown_var.get())
+            self.collections.remove(dropdown_var.get())
             dropdown_var.set("Select a group")
             update_menu()
 
@@ -144,7 +152,8 @@ class InventoryFrame(tk.Frame):
             main_menu.delete(0, "end")
             menu.delete(0, "end")
             main_menu.add_command(label=ALL, command=self.group_var.set(ALL))
-            for option in self.groups:
+            self.collections = get_collections()
+            for option in self.collections:
                 menu.add_command(label=option, command=lambda value=option: dropdown_var.set(value))
                 main_menu.add_command(label=option, command=lambda value=option: self.group_var.set(value))
 
@@ -153,11 +162,11 @@ class InventoryFrame(tk.Frame):
 
         entry = tk.Entry(manage)
         # Weird error occurs here as well
-        # dropdown = tk.OptionMenu(manage, dropdown_var, *self.groups)
+        # dropdown = tk.OptionMenu(manage, dropdown_var, *self.collections)
         dropdown = tk.OptionMenu(manage, dropdown_var, [])
         menu = dropdown["menu"]
         menu.delete(0, "end")
-        for group in self.groups:
+        for group in self.collections:
             self.group_menu["menu"].add_command(label=group, command=lambda value=group: dropdown_var.set(value))
         dropdown.config(width=40)
 
@@ -169,3 +178,5 @@ class InventoryFrame(tk.Frame):
         dropdown.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
         add_button.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
         remove_button.grid(row=1, column=1, sticky="ew", padx=5, pady=5)
+
+        update_menu()
