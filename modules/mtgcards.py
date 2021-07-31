@@ -12,8 +12,14 @@ RARE = 'Rare'
 MYTHIC = 'Mythic Rare'
 
 
-def fetch(name):
-    print(name)
-    cards = Card.where(name=name).all()
-    cards.sort(key=lambda x: x.name)
-    return cards
+def fetch_by_name(name):
+	print(name)
+	cards = Card.where(name=name).all()
+	cards.sort(key=lambda x: x.name)
+	return cards
+
+
+def fetch_by_id(mv_id):
+	print(id)
+	card = Card.find(mv_id)
+	return card

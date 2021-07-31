@@ -75,9 +75,9 @@ class SearchFrame(tk.Frame):
 
     def search_mtg(self):
         name = self.search_name.get()
-        if name is "":
+        if name == "":
             return
-        cards = mtg.fetch(name)
+        cards = mtg.fetch_by_name(name)
         self.list.delete(first=0, last=tk.END)
         for card in cards:
             self.card_found(card)
