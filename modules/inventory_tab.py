@@ -62,13 +62,14 @@ def import_card_list(card_list_file, collection):
         collection_list = pd.read_csv(STORAGE + collection + ".csv", sep=',')
 
         for card_index in import_list.index:
+            if import_list["Foil"][card_index]:
+                foil = 1
+            else:
+                foil = 0
             res = collection_list[collection_list["MultiverseID"] == import_list["Multiverse ID"][card_index]]
             if res.empty:
                 print("Card " + import_list["Card Name"][card_index] + " Not found, adding to list")
-                if import_list["Foil"][card_index]:
-                    foil = 1
-                else:
-                    foil = 0
+
                 fetch_res = mtgcards.fetch_by_id(import_list["Multiverse ID"][card_index])
                 collection_list = collection_list.append({
                     "MultiverseID": import_list["Multiverse ID"][card_index],
@@ -81,11 +82,15 @@ def import_card_list(card_list_file, collection):
                     "Qty": "1",
                     }, ignore_index=True)
             else:
-                print("card found, not adding to list")
+                print("card found already in collection, increasing count")
+                collection_list.loc[res.index[0], "Qty"] = int(collection_list.loc[res.index[0], "Qty"]) + 1
+                if foil:
+                    collection_list.loc[res.index[0], "FoilQty"] = int(collection_list.loc[res.index[0], "FoilQty"]) + 1
 
         print(collection_list)
         collection_list.to_csv(STORAGE + collection + ".csv", index=True)
         return True
+
     except:
         return False
 
