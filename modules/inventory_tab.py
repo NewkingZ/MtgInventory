@@ -1,8 +1,11 @@
 # Inventory tab to keep a count on owned cards
 import tkinter as tk
+from tkinter.filedialog import askopenfilename
 import os.path
 import os
 import csv
+import pandas as pd
+import modules.mtgcards as mtgcards
 
 
 ALL = "Library"
@@ -27,13 +30,11 @@ def make_collection(name):
     with open(STORAGE + name, "w+") as f:
         writer = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
-        writer.writerow(["CardName", "SetName", "MultiverseID", "Type", "SubType", "ColorID", "Cost",
-                         "JSONID", "Foil", "Qty"])
+        writer.writerow(["MultiverseID", "CardName", "SetName", "Type", "ColorID", "Cost", "FoilQty", "Qty"])
 
 
 def remove_collection(name):
-    # Check to see if the file exists
-    # TODO
+    # TODO: Check to see if the file exists
 
     if name[:-4] != ".csv" or name[:-4] != ".CSV":
         name = name + ".csv"
@@ -51,6 +52,38 @@ def get_collections():
     for coll in os.listdir(STORAGE):
         collections.append(coll[:-4])
     return collections
+
+
+def import_card_list(card_list_file, collection):
+    print("Importing " + card_list_file + " into " + collection)
+    # Open files with csv reader
+    import_list = pd.read_csv(card_list_file, sep=',')
+    collection_list = pd.read_csv(STORAGE + collection + ".csv", sep=',')
+
+    for card_index in import_list.index:
+        res = collection_list[collection_list["MultiverseID"] == import_list["Multiverse ID"][card_index]]
+        if res.empty:
+            print("Card " + import_list["Card Name"][card_index] + " Not found, adding to list")
+            if import_list["Foil"][card_index]:
+                foil = 1
+            else:
+                foil = 0
+            fetch_res = mtgcards.fetch_by_id(import_list["Multiverse ID"][card_index])
+            collection_list = collection_list.append({
+                "MultiverseID": import_list["Multiverse ID"][card_index],
+                "CardName": import_list["Card Name"][card_index],
+                "SetName": import_list["Set Name"][card_index],
+                "Type": fetch_res.type,
+                "ColorID": mtgcards.stringify_color_id(fetch_res),
+                "Cost": fetch_res.mana_cost.replace('{', '').replace('}', ''),
+                "FoilQty": foil,
+                "Qty": "1",
+                }, ignore_index=True)
+        else:
+            print("card found, not adding to list")
+
+    print(collection_list)
+    collection_list.to_csv(STORAGE + collection + ".csv", index=True)
 
 
 class InventoryFrame(tk.Frame):
@@ -78,7 +111,8 @@ class InventoryFrame(tk.Frame):
             self.group_menu["menu"].add_command(label=option, command=lambda value=option: self.group_var.set(value))
 
         self.fetch = tk.Button(self.search_frame, text="Fetch", command=print_nyan, width=15, height=1)
-        self.import_button = tk.Button(self.search_frame, text="Import", command=print_nyan, width=15, height=1)
+        self.import_button = tk.Button(self.search_frame, text="Import", command=self.import_collection,
+                                       width=15, height=1)
         self.manage = tk.Button(self.search_frame, text="Manage Collections", command=self.manage_collections, width=15,
                                 height=1)
 
@@ -126,6 +160,7 @@ class InventoryFrame(tk.Frame):
 
         # Requires 4 things: Entry + add, dropdown + remove
         dropdown_var = tk.StringVar(manage)
+        default_selection = "Select a group"
         dropdown_var.set("Select a group")
 
         def accept():
@@ -141,7 +176,7 @@ class InventoryFrame(tk.Frame):
 
         def remove():
             # Check remove
-            if dropdown_var.get() == "Select a group":
+            if dropdown_var.get() == default_selection:
                 return
 
             remove_collection(dropdown_var.get())
@@ -186,63 +221,60 @@ class InventoryFrame(tk.Frame):
     def import_collection(self):
         import_collection = tk.Toplevel(self.client.window)
         import_collection.wm_title("Import collection")
-        # manage.geometry("400x75")
+        # import_collection.geometry("400x75")
         import_collection.resizable(False, False)
         import_collection.grab_set()
 
-        # Requires 4 things: Entry + add, dropdown + remove
+        # Requires 5 things: widgets + File search, dropdown + label, confirm
         dropdown_var = tk.StringVar(import_collection)
-        dropdown_var.set("")
+        default_selection = "Select collection"
+        dropdown_var.set(default_selection)
 
         def confirm():
-            # Check if entered text is valid
-            new = entry.get()
-            if new == "" or new.find(',') != -1 or new in self.collections:
+            # Check whether file is csv first
+            import_file = collection_entry.get()
+            if import_file[-4:] != ".csv" and import_file[-4:] != ".CSV":
+                print("Invalid import type")
                 return
 
-            entry.delete(0, "end")
-            make_collection(new)
-            # self.collections.append(new)
-            update_menu()
-
-        def remove():
-            # Check remove
-            if dropdown_var.get() == "Select a group":
+            # Make sure a collection was selected
+            collection_selected = dropdown_var.get()
+            if collection_selected == default_selection:
+                print("Invalid collection")
                 return
 
-            remove_collection(dropdown_var.get())
-            self.collections.remove(dropdown_var.get())
-            dropdown_var.set("Select a group")
-            update_menu()
+            # Attempt importing file into collection
+            import_card_list(import_file, collection_selected)
 
-        def update_menu():
-            main_menu = self.group_menu["menu"]
-            main_menu.delete(0, "end")
-            menu.delete(0, "end")
-            main_menu.add_command(label=ALL, command=self.group_var.set(ALL))
-            self.collections = get_collections()
-            for option in self.collections:
-                menu.add_command(label=option, command=lambda value=option: dropdown_var.set(value))
-                main_menu.add_command(label=option, command=lambda value=option: self.group_var.set(value))
+            print("Confirm pressed")
 
-        add_button = tk.Button(import_collection, text="Add", height=1, width=15, command=confirm)
-        remove_button = tk.Button(import_collection, text="Remove", height=1, width=15, command=remove)
+        def search_files():
+            # Check through files
+            print("Lookin for files")
+            filename = askopenfilename()
+            collection_entry.delete(0, "end")
+            collection_entry.insert(0, filename)
 
-        entry = tk.Entry(import_collection)
+        search_button = tk.Button(import_collection, text="Select file", height=1, width=10, command=search_files)
+        select_collection = tk.Label(import_collection, text="Import into", height=1, width=15)
+        confirm_button = tk.Button(import_collection, text="Confirm", height=1, width=10, command=confirm)
+        collection_entry = tk.Entry(import_collection)
+
         # Weird error occurs here as well
         # dropdown = tk.OptionMenu(manage, dropdown_var, *self.collections)
         dropdown = tk.OptionMenu(import_collection, dropdown_var, [])
         menu = dropdown["menu"]
         menu.delete(0, "end")
-        for group in self.collections:
-            self.group_menu["menu"].add_command(label=group, command=lambda value=group: dropdown_var.set(value))
+        for option in get_collections():
+            menu.add_command(label=option, command=lambda value=option: dropdown_var.set(value))
         dropdown.config(width=40)
 
         import_collection.rowconfigure([0, 1], weight=1)
         import_collection.columnconfigure(0, weight=4)
         import_collection.columnconfigure(1, weight=1)
 
-        entry.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
+        collection_entry.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
         dropdown.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
-        add_button.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
-        remove_button.grid(row=1, column=1, sticky="ew", padx=5, pady=5)
+        search_button.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
+        select_collection.grid(row=1, column=1, sticky="ew", padx=5, pady=5)
+        confirm_button.grid(row=2, column=1, sticky="e", padx=5, pady=5)
