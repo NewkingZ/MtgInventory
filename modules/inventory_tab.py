@@ -55,35 +55,39 @@ def get_collections():
 
 
 def import_card_list(card_list_file, collection):
-    print("Importing " + card_list_file + " into " + collection)
-    # Open files with csv reader
-    import_list = pd.read_csv(card_list_file, sep=',')
-    collection_list = pd.read_csv(STORAGE + collection + ".csv", sep=',')
+    try:
+        print("Importing " + card_list_file + " into " + collection)
+        # Open files with csv reader
+        import_list = pd.read_csv(card_list_file, sep=',')
+        collection_list = pd.read_csv(STORAGE + collection + ".csv", sep=',')
 
-    for card_index in import_list.index:
-        res = collection_list[collection_list["MultiverseID"] == import_list["Multiverse ID"][card_index]]
-        if res.empty:
-            print("Card " + import_list["Card Name"][card_index] + " Not found, adding to list")
-            if import_list["Foil"][card_index]:
-                foil = 1
+        for card_index in import_list.index:
+            res = collection_list[collection_list["MultiverseID"] == import_list["Multiverse ID"][card_index]]
+            if res.empty:
+                print("Card " + import_list["Card Name"][card_index] + " Not found, adding to list")
+                if import_list["Foil"][card_index]:
+                    foil = 1
+                else:
+                    foil = 0
+                fetch_res = mtgcards.fetch_by_id(import_list["Multiverse ID"][card_index])
+                collection_list = collection_list.append({
+                    "MultiverseID": import_list["Multiverse ID"][card_index],
+                    "CardName": import_list["Card Name"][card_index],
+                    "SetName": import_list["Set Name"][card_index],
+                    "Type": fetch_res.type,
+                    "ColorID": mtgcards.stringify_color_id(fetch_res),
+                    "Cost": fetch_res.mana_cost.replace('{', '').replace('}', ''),
+                    "FoilQty": foil,
+                    "Qty": "1",
+                    }, ignore_index=True)
             else:
-                foil = 0
-            fetch_res = mtgcards.fetch_by_id(import_list["Multiverse ID"][card_index])
-            collection_list = collection_list.append({
-                "MultiverseID": import_list["Multiverse ID"][card_index],
-                "CardName": import_list["Card Name"][card_index],
-                "SetName": import_list["Set Name"][card_index],
-                "Type": fetch_res.type,
-                "ColorID": mtgcards.stringify_color_id(fetch_res),
-                "Cost": fetch_res.mana_cost.replace('{', '').replace('}', ''),
-                "FoilQty": foil,
-                "Qty": "1",
-                }, ignore_index=True)
-        else:
-            print("card found, not adding to list")
+                print("card found, not adding to list")
 
-    print(collection_list)
-    collection_list.to_csv(STORAGE + collection + ".csv", index=True)
+        print(collection_list)
+        collection_list.to_csv(STORAGE + collection + ".csv", index=True)
+        return True
+    except:
+        return False
 
 
 class InventoryFrame(tk.Frame):
@@ -235,18 +239,25 @@ class InventoryFrame(tk.Frame):
             import_file = collection_entry.get()
             if import_file[-4:] != ".csv" and import_file[-4:] != ".CSV":
                 print("Invalid import type")
+                warn_label.config(text="Invalid file type", fg="red")
+                warn_label.grid(row=2, column=0, columnspan=2, sticky="ew", padx=5, pady=5)
                 return
 
             # Make sure a collection was selected
             collection_selected = dropdown_var.get()
             if collection_selected == default_selection:
-                print("Invalid collection")
+                warn_label.config(text="Invalid collection", fg="red")
+                warn_label.grid(row=2, column=0, columnspan=2, sticky="ew", padx=5, pady=5)
                 return
 
             # Attempt importing file into collection
-            import_card_list(import_file, collection_selected)
-
-            print("Confirm pressed")
+            warn_label.config(text="Starting import, this can take a while", fg="orange")
+            warn_label.grid(row=2, column=0, columnspan=2, sticky="ew", padx=5, pady=5)
+            self.update_idletasks()
+            if import_card_list(import_file, collection_selected):
+                warn_label.config(text="Completed Import!", fg="green")
+            else:
+                warn_label.config(text="A problem occurred during import", fg="red")
 
         def search_files():
             # Check through files
@@ -259,6 +270,7 @@ class InventoryFrame(tk.Frame):
         select_collection = tk.Label(import_collection, text="Import into", height=1, width=15)
         confirm_button = tk.Button(import_collection, text="Confirm", height=1, width=10, command=confirm)
         collection_entry = tk.Entry(import_collection)
+        warn_label = tk.Label(import_collection, text="", height=1, width=15)
 
         # Weird error occurs here as well
         # dropdown = tk.OptionMenu(manage, dropdown_var, *self.collections)
@@ -277,4 +289,4 @@ class InventoryFrame(tk.Frame):
         dropdown.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
         search_button.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
         select_collection.grid(row=1, column=1, sticky="ew", padx=5, pady=5)
-        confirm_button.grid(row=2, column=1, sticky="e", padx=5, pady=5)
+        confirm_button.grid(row=3, column=1, sticky="e", padx=5, pady=5)
