@@ -8,6 +8,7 @@ import modules.mtgcards as mtgcards
 
 ALL = "Library"
 STORAGE = "./storage/"
+CARDNAME = "CardName"
 
 
 # Make a local collection
@@ -24,7 +25,7 @@ def make_collection(name):
     with open(STORAGE + name, "w+") as f:
         writer = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
-        writer.writerow(["MultiverseID", "CardName", "SetName", "Rarity", "Type", "ColorID", "Cost", "FoilQty", "Qty"])
+        writer.writerow(["MultiverseID", CARDNAME, "SetName", "Rarity", "Type", "ColorID", "Cost", "FoilQty", "Qty"])
 
 
 def remove_collection(name):
@@ -66,8 +67,8 @@ def import_card_list(card_list_file, collection):
                 fetch_res = mtgcards.fetch_by_id(import_list["Multiverse ID"][card_index])
                 collection_list = collection_list.append({
                     "MultiverseID": import_list["Multiverse ID"][card_index],
-                    "CardName": import_list["Card Name"][card_index],
-                    "SetName": import_list["Set Name"][card_index],
+                    CARDNAME: import_list["Card Name"][card_index],
+                    "SetName": fetch_res.set,
                     "Rarity": fetch_res.rarity,
                     "Type": fetch_res.type,
                     "ColorID": mtgcards.stringify_color_id(fetch_res),

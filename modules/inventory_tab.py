@@ -3,11 +3,16 @@ import tkinter as tk
 from tkinter.filedialog import askopenfilename
 import libraries.collections as collections
 
-PAGE_SIZE = 100
+PAGE_SIZE = 200
 
 
 def print_nyan():
 	print("Nyanpasu!")
+
+
+def format_card_for_display(card):
+	line_info = str(card)
+	return line_info
 
 
 class InventoryFrame(tk.Frame):
@@ -42,7 +47,7 @@ class InventoryFrame(tk.Frame):
 
 		self.fetch = tk.Button(self.search_frame, text="Fetch", command=self.display_collection, width=15, height=1)
 		self.import_button = tk.Button(self.search_frame, text="Import", command=self.import_collection,
-									   width=15, height=1)
+									   width=20, height=1)
 		self.manage = tk.Button(self.search_frame, text="Manage Collections", command=self.manage_collections, width=15,
 								height=1)
 
@@ -57,7 +62,8 @@ class InventoryFrame(tk.Frame):
 		# Maybe remove set from headers for set code instead
 
 		# Place name, set code, cost, rarity, group location
-		header_titles = "Name" + " " * 46 + "Set" + " " * 6 + "Rarity" + "    " + "Mana cost" + " " * 8 + "Location"
+		header_titles = "Name" + " " * 46 + "Set" + " " * 6 + "Type" + " "*15 + "Rarity" + "    " + "Mana cost" + \
+						" " * 8 + "Qty" + " " * 3 + "Foils"
 		header_label = tk.Label(self.search_frame, text=header_titles, font='TkFixedFont')
 
 		# Configure columns and rows for main frame:
@@ -107,7 +113,7 @@ class InventoryFrame(tk.Frame):
 			self.button_next["state"] = tk.NORMAL
 
 	def display_collection(self):
-		print("Get collection info for: " + self.group_var.get())
+		self.list.delete(0, tk.END)
 		if self.group_var.get() == collections.ALL:
 			print("Display for Library not yet supported")
 			# TODO: Implement display for Library
@@ -118,6 +124,7 @@ class InventoryFrame(tk.Frame):
 		card_pool = collections.collection_get_cards(self.current_collection, 0, PAGE_SIZE)
 		for card in card_pool.index:
 			# Display card details here
+			self.list.insert(tk.END, format_card_for_display(card_pool["CardName"][card]))
 			print(card_pool["CardName"][card])
 		self.update_page_info()
 
