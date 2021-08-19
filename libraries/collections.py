@@ -29,7 +29,6 @@ def make_collection(name):
 
 def remove_collection(name):
     # TODO: Check to see if the file exists
-
     if name[:-4] != ".csv" or name[:-4] != ".CSV":
         name = name + ".csv"
     os.remove(STORAGE + name)
@@ -90,4 +89,18 @@ def import_card_list(card_list_file, collection):
         return False
 
 
+def collection_size(collection_name):
+    collection_list = pd.read_csv(STORAGE + collection_name + ".csv", sep=',')
+    return len(collection_list.index)
 
+
+def collection_get_cards(collection_name, starting_index, count):
+    collection_list = pd.read_csv(STORAGE + collection_name + ".csv", sep=',')
+    # Case 1: Starting index is too high; Return nothing:
+    if len(collection_list.index) < starting_index:
+        return None
+    # Case 2: Starting index is fine, but count goes higher than the number of cards available; return what it can
+    if len(collection_list.index) < starting_index + count:
+        return collection_list
+    # Case 3: The starting index is fine and adding the count is still within the boundaries; return chunk
+    return collection_list[starting_index:starting_index+count]
