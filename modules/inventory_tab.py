@@ -1,98 +1,11 @@
 # Inventory tab to keep a count on owned cards
 import tkinter as tk
 from tkinter.filedialog import askopenfilename
-import os.path
-import os
-import csv
-import pandas as pd
-import modules.mtgcards as mtgcards
-
-
-ALL = "Library"
-STORAGE = "./storage/"
+import libraries.collections as collections
 
 
 def print_nyan():
     print("Nyanpasu!")
-
-
-# Make a local collection
-def make_collection(name):
-    # Check to see if the file name has any problems, if its already there, etc...
-    if not name.isalnum():
-        print("name is not alphanumeric")
-        return
-
-    # Make the file
-    if name[:-4] != ".csv" or name[:-4] != ".CSV":
-        name = name + ".csv"
-
-    with open(STORAGE + name, "w+") as f:
-        writer = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-
-        writer.writerow(["MultiverseID", "CardName", "SetName", "Type", "ColorID", "Cost", "FoilQty", "Qty"])
-
-
-def remove_collection(name):
-    # TODO: Check to see if the file exists
-
-    if name[:-4] != ".csv" or name[:-4] != ".CSV":
-        name = name + ".csv"
-    os.remove(STORAGE + name)
-
-
-# Get a list of current collections
-def get_collections():
-    # Make sure the storage folder is available
-    if not os.path.isdir(STORAGE):
-        os.mkdir(STORAGE, 0o755)
-
-    # List out contents of storage
-    collections = []
-    for coll in os.listdir(STORAGE):
-        collections.append(coll[:-4])
-    return collections
-
-
-def import_card_list(card_list_file, collection):
-    try:
-        print("Importing " + card_list_file + " into " + collection)
-        # Open files with csv reader
-        import_list = pd.read_csv(card_list_file, sep=',')
-        collection_list = pd.read_csv(STORAGE + collection + ".csv", sep=',')
-
-        for card_index in import_list.index:
-            if import_list["Foil"][card_index]:
-                foil = 1
-            else:
-                foil = 0
-            res = collection_list[collection_list["MultiverseID"] == import_list["Multiverse ID"][card_index]]
-            if res.empty:
-                print("Card " + import_list["Card Name"][card_index] + " Not found, adding to list")
-
-                fetch_res = mtgcards.fetch_by_id(import_list["Multiverse ID"][card_index])
-                collection_list = collection_list.append({
-                    "MultiverseID": import_list["Multiverse ID"][card_index],
-                    "CardName": import_list["Card Name"][card_index],
-                    "SetName": import_list["Set Name"][card_index],
-                    "Type": fetch_res.type,
-                    "ColorID": mtgcards.stringify_color_id(fetch_res),
-                    "Cost": fetch_res.mana_cost.replace('{', '').replace('}', ''),
-                    "FoilQty": foil,
-                    "Qty": "1",
-                    }, ignore_index=True)
-            else:
-                print("card found already in collection, increasing count")
-                collection_list.loc[res.index[0], "Qty"] = int(collection_list.loc[res.index[0], "Qty"]) + 1
-                if foil:
-                    collection_list.loc[res.index[0], "FoilQty"] = int(collection_list.loc[res.index[0], "FoilQty"]) + 1
-
-        print(collection_list)
-        collection_list.to_csv(STORAGE + collection + ".csv", index=True)
-        return True
-
-    except:
-        return False
 
 
 class InventoryFrame(tk.Frame):
@@ -102,7 +15,7 @@ class InventoryFrame(tk.Frame):
         self.grid_propagate(False)
         self.client = client
         self.collections = []
-        for option in get_collections():
+        for option in collections.get_collections():
             self.collections.append(option)
 
         # Set up listbox and search methods
@@ -112,14 +25,15 @@ class InventoryFrame(tk.Frame):
         # self.group_menu = tk.OptionMenu(self.search_frame, self.group_var, *self.collections)
         self.group_menu = tk.OptionMenu(self.search_frame, self.group_var, [])
         self.group_menu.config(height=1, width=20)
-        self.group_var.set(ALL)
+        self.group_var.set(collections.ALL)
 
         self.group_menu["menu"].delete(0, "end")
-        self.group_menu["menu"].add_command(label=ALL, command=lambda value=ALL: self.group_var.set(value))
+        self.group_menu["menu"].add_command(label=collections.ALL,
+                                            command=lambda value=collections.ALL: self.group_var.set(value))
         for option in self.collections:
             self.group_menu["menu"].add_command(label=option, command=lambda value=option: self.group_var.set(value))
 
-        self.fetch = tk.Button(self.search_frame, text="Fetch", command=print_nyan, width=15, height=1)
+        self.fetch = tk.Button(self.search_frame, text="Fetch", command=self.display_collection, width=15, height=1)
         self.import_button = tk.Button(self.search_frame, text="Import", command=self.import_collection,
                                        width=15, height=1)
         self.manage = tk.Button(self.search_frame, text="Manage Collections", command=self.manage_collections, width=15,
@@ -160,6 +74,15 @@ class InventoryFrame(tk.Frame):
         self.manage.grid(row=10, column=80, sticky='e', padx=10)
         header_label.grid(row=20, column=10, columnspan=71, sticky='ws')
 
+    def display_collection(self):
+        print("Get collection info for: " + self.group_var.get())
+        if self.group_var.get() == collections.ALL:
+            print("Display for Library not yet supported")
+            # TODO: Implement display for Library
+            return
+
+        collection = self.group_var.get()
+
     def manage_collections(self):
         manage = tk.Toplevel(self.client.window)
         manage.wm_title("Manage Collections")
@@ -179,7 +102,7 @@ class InventoryFrame(tk.Frame):
                 return
 
             entry.delete(0, "end")
-            make_collection(new)
+            collections.make_collection(new)
             # self.collections.append(new)
             update_menu()
 
@@ -188,7 +111,7 @@ class InventoryFrame(tk.Frame):
             if dropdown_var.get() == default_selection:
                 return
 
-            remove_collection(dropdown_var.get())
+            collections.remove_collection(dropdown_var.get())
             self.collections.remove(dropdown_var.get())
             dropdown_var.set("Select a group")
             update_menu()
@@ -197,8 +120,8 @@ class InventoryFrame(tk.Frame):
             main_menu = self.group_menu["menu"]
             main_menu.delete(0, "end")
             menu.delete(0, "end")
-            main_menu.add_command(label=ALL, command=self.group_var.set(ALL))
-            self.collections = get_collections()
+            main_menu.add_command(label=collections.ALL, command=self.group_var.set(collections.ALL))
+            self.collections = collections.get_collections()
             for option in self.collections:
                 menu.add_command(label=option, command=lambda value=option: dropdown_var.set(value))
                 main_menu.add_command(label=option, command=lambda value=option: self.group_var.set(value))
@@ -259,7 +182,7 @@ class InventoryFrame(tk.Frame):
             warn_label.config(text="Starting import, this can take a while", fg="orange")
             warn_label.grid(row=2, column=0, columnspan=2, sticky="ew", padx=5, pady=5)
             self.update_idletasks()
-            if import_card_list(import_file, collection_selected):
+            if collections.import_card_list(import_file, collection_selected):
                 warn_label.config(text="Completed Import!", fg="green")
             else:
                 warn_label.config(text="A problem occurred during import", fg="red")
@@ -282,7 +205,7 @@ class InventoryFrame(tk.Frame):
         dropdown = tk.OptionMenu(import_collection, dropdown_var, [])
         menu = dropdown["menu"]
         menu.delete(0, "end")
-        for option in get_collections():
+        for option in collections.get_collections():
             menu.add_command(label=option, command=lambda value=option: dropdown_var.set(value))
         dropdown.config(width=40)
 
