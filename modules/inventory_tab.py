@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter.filedialog import askopenfilename
 import libraries.collections as collections
+import modules.mtgcards as mtg
 
 PAGE_SIZE = 200
 
@@ -94,14 +95,8 @@ class InventoryFrame(tk.Frame):
 		self.manage.grid(row=10, column=80, sticky='e', padx=10)
 		header_label.grid(row=20, column=10, columnspan=71, sticky='ws')
 
-		def on_list_select(evt):
-			if self.card_pool is None:
-				return
-			ind = self.list.curselection()[0]
-			# Display the bottom card here
-			print("MID: " + str(self.card_pool[collections.CARDMID][ind]) + ", Name " + self.card_pool[collections.CARDNAME][ind])
+		# Change this to work on enter press
 
-		self.list.bind('<<ListboxSelect>>', on_list_select)
 		self.update_page_info()
 
 	def update_page_info(self):
@@ -280,3 +275,16 @@ class InventoryFrame(tk.Frame):
 		search_button.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
 		select_collection.grid(row=1, column=1, sticky="ew", padx=5, pady=5)
 		confirm_button.grid(row=3, column=1, sticky="e", padx=5, pady=5)
+
+	def enter_pressed(self, evt):
+		# When the enter button is pressed, this command will run.
+		# Confirm the text box is selected before searching for the cards
+		if evt.widget is self.list:
+			try:
+				if self.card_pool is None:
+					return
+				ind = self.list.curselection()[0]
+				# Display the bottom card here
+				self.client.update_display(mtg.fetch_by_id(str(self.card_pool[collections.CARDMID][ind])))
+			except IndexError:
+				pass
