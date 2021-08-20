@@ -29,6 +29,7 @@ class InventoryFrame(tk.Frame):
 		self.page = 1
 		self.num_pages = 1
 		self.current_collection = None
+		self.card_pool = None
 
 		# Set up listbox and search methods
 		self.search_frame = tk.Frame(self)
@@ -62,7 +63,7 @@ class InventoryFrame(tk.Frame):
 		# Maybe remove set from headers for set code instead
 
 		# Place name, set code, cost, rarity, group location
-		header_titles = "Name" + " " * 46 + "Set" + " " * 6 + "Type" + " "*15 + "Rarity" + "    " + "Mana cost" + \
+		header_titles = "Name" + " " * 46 + "Set" + " " * 6 + "Type" + " " * 40 + "Rarity" + "       " + "Mana cost" + \
 						" " * 8 + "Qty" + " " * 3 + "Foils"
 		header_label = tk.Label(self.search_frame, text=header_titles, font='TkFixedFont')
 
@@ -92,6 +93,15 @@ class InventoryFrame(tk.Frame):
 		self.import_button.grid(row=10, column=70, sticky='e', padx=10)
 		self.manage.grid(row=10, column=80, sticky='e', padx=10)
 		header_label.grid(row=20, column=10, columnspan=71, sticky='ws')
+
+		def on_list_select(evt):
+			if self.card_pool is None:
+				return
+			ind = self.list.curselection()[0]
+			# Display the bottom card here
+			print("MID: " + str(self.card_pool[collections.CARDMID][ind]) + ", Name " + self.card_pool[collections.CARDNAME][ind])
+
+		self.list.bind('<<ListboxSelect>>', on_list_select)
 		self.update_page_info()
 
 	def update_page_info(self):
@@ -124,8 +134,15 @@ class InventoryFrame(tk.Frame):
 		card_pool = collections.collection_get_cards(self.current_collection, 0, PAGE_SIZE)
 		for card in card_pool.index:
 			# Display card details here
-			self.list.insert(tk.END, format_card_for_display(card_pool["CardName"][card]))
-			print(card_pool["CardName"][card])
+			t_l = card_pool[collections.CARDNAME][card] + " " * (50 - len(card_pool[collections.CARDNAME][card]))
+			t_l = t_l + card_pool[collections.CARDSET][card] + " " * (9 - len(card_pool[collections.CARDSET][card]))
+			t_l = t_l + card_pool[collections.CARDTYPE][card] + " " * (44 - len(card_pool[collections.CARDTYPE][card]))
+			t_l = t_l + card_pool[collections.CARDRARITY][card] + " " * (13 - len(str(card_pool[collections.CARDRARITY][card])))
+			t_l = t_l + card_pool[collections.CARDCOST][card] + " " * (17 - len(card_pool[collections.CARDCOST][card]))
+			t_l = t_l + str(card_pool[collections.CARDQTY][card]) + " " * (6 - len(str(card_pool[collections.CARDQTY][card])))
+			t_l = t_l + str(card_pool[collections.CARDFOILS][card])
+			self.list.insert(tk.END, t_l)
+		self.card_pool = card_pool
 		self.update_page_info()
 
 	def manage_collections(self):

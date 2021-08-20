@@ -8,7 +8,15 @@ import modules.mtgcards as mtgcards
 
 ALL = "Library"
 STORAGE = "./storage/"
+CARDMID = "MultiverseID"
 CARDNAME = "CardName"
+CARDSET = "SetName"
+CARDTYPE = "Type"
+CARDRARITY = "Rarity"
+CARDCID = "ColorID"
+CARDCOST = "Cost"
+CARDQTY = "Qty"
+CARDFOILS = "FoilQty"
 
 
 # Make a local collection
@@ -25,7 +33,8 @@ def make_collection(name):
     with open(STORAGE + name, "w+") as f:
         writer = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
-        writer.writerow(["MultiverseID", CARDNAME, "SetName", "Rarity", "Type", "ColorID", "Cost", "FoilQty", "Qty"])
+        writer.writerow([CARDMID, CARDNAME, CARDSET, CARDRARITY, CARDTYPE, CARDCID, CARDCOST,
+                         CARDFOILS, CARDQTY])
 
 
 def remove_collection(name):
@@ -68,13 +77,13 @@ def import_card_list(card_list_file, collection):
                 collection_list = collection_list.append({
                     "MultiverseID": import_list["Multiverse ID"][card_index],
                     CARDNAME: import_list["Card Name"][card_index],
-                    "SetName": fetch_res.set,
-                    "Rarity": fetch_res.rarity,
-                    "Type": fetch_res.type,
-                    "ColorID": mtgcards.stringify_color_id(fetch_res),
-                    "Cost": fetch_res.mana_cost.replace('{', '').replace('}', ''),
-                    "FoilQty": foil,
-                    "Qty": "1",
+                    CARDSET: fetch_res.set,
+                    CARDRARITY: fetch_res.rarity,
+                    CARDTYPE: fetch_res.type,
+                    CARDCID: mtgcards.stringify_color_id(fetch_res),
+                    CARDCOST: fetch_res.mana_cost.replace('{', '').replace('}', ''),
+                    CARDFOILS: foil,
+                    CARDQTY: "1",
                     }, ignore_index=True)
             else:
                 print("card found already in collection, increasing count")
