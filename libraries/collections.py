@@ -57,46 +57,48 @@ def get_collections():
     return collections
 
 
-def import_card_list(card_list_file, collection):
-    try:
-        print("Importing " + card_list_file + " into " + collection)
-        # Open files with csv reader
-        import_list = pd.read_csv(card_list_file, sep=',')
-        collection_list = pd.read_csv(STORAGE + collection + ".csv", sep=',')
+def import_card_list(card_list_file, collection, update_fn=None):
+    print("Importing " + card_list_file + " into " + collection)
+    # Open files with csv reader
+    # TODO: Check for special characters in the import file
+    # TODO: How do we want to handle promos / other cards with no Multiverse ID?
+    import_list = pd.read_csv(card_list_file, sep=',')
+    collection_list = pd.read_csv(STORAGE + collection + ".csv", sep=',')
 
-        for card_index in import_list.index:
-            if import_list["Foil"][card_index]:
-                foil = 1
-            else:
-                foil = 0
-            res = collection_list[collection_list["MultiverseID"] == import_list["Multiverse ID"][card_index]]
-            if res.empty:
-                print("Card " + import_list["Card Name"][card_index] + " Not found, adding to list")
+    for card_index in import_list.index:
+        if import_list["Foil"][card_index]:
+            foil = 1
+        else:
+            foil = 0
+        res = collection_list[collection_list["MultiverseID"] == import_list["Multiverse ID"][card_index]]
 
-                fetch_res = mtgcards.fetch_by_id(import_list["Multiverse ID"][card_index])
-                collection_list = collection_list.append({
-                    "MultiverseID": import_list["Multiverse ID"][card_index],
-                    CARDNAME: import_list["Card Name"][card_index],
-                    CARDSET: fetch_res.set,
-                    CARDRARITY: fetch_res.rarity,
-                    CARDTYPE: fetch_res.type,
-                    CARDCID: mtgcards.stringify_color_id(fetch_res),
-                    CARDCOST: fetch_res.mana_cost.replace('{', '').replace('}', ''),
-                    CARDFOILS: foil,
-                    CARDQTY: "1",
-                    }, ignore_index=True)
-            else:
-                print("card found already in collection, increasing count")
-                collection_list.loc[res.index[0], "Qty"] = int(collection_list.loc[res.index[0], "Qty"]) + 1
-                if foil:
-                    collection_list.loc[res.index[0], "FoilQty"] = int(collection_list.loc[res.index[0], "FoilQty"]) + 1
+        if res.empty:
+            print("Card " + import_list["Card Name"][card_index] + " Not found, adding to list")
 
-        print(collection_list)
-        collection_list.to_csv(STORAGE + collection + ".csv", index=True)
-        return True
+            fetch_res = mtgcards.fetch_by_id(import_list["Multiverse ID"][card_index])
+            collection_list = collection_list.append({
+                "MultiverseID": import_list["Multiverse ID"][card_index],
+                CARDNAME: import_list["Card Name"][card_index],
+                CARDSET: fetch_res.set,
+                CARDRARITY: fetch_res.rarity,
+                CARDTYPE: fetch_res.type,
+                CARDCID: mtgcards.stringify_color_id(fetch_res),
+                CARDCOST: str(fetch_res.mana_cost).replace('{', '').replace('}', ''),
+                CARDFOILS: foil,
+                CARDQTY: "1",
+                }, ignore_index=True)
+        else:
+            print("card found already in collection, increasing count")
+            collection_list.loc[res.index[0], "Qty"] = int(collection_list.loc[res.index[0], "Qty"]) + 1
+            if foil:
+                collection_list.loc[res.index[0], "FoilQty"] = int(collection_list.loc[res.index[0], "FoilQty"]) + 1
 
-    except:
-        return False
+        if update_fn is not None:
+            update_fn(card_index, import_list.index[-1])
+
+    # print(collection_list)
+    collection_list.to_csv(STORAGE + collection + ".csv", index=True)
+    return True
 
 
 def collection_size(collection_name):
@@ -111,6 +113,6 @@ def collection_get_cards(collection_name, starting_index, count):
         return None
     # Case 2: Starting index is fine, but count goes higher than the number of cards available; return what it can
     if len(collection_list.index) < starting_index + count:
-        return collection_list
+        return collection_list[starting_index:]
     # Case 3: The starting index is fine and adding the count is still within the boundaries; return chunk
     return collection_list[starting_index:starting_index+count]

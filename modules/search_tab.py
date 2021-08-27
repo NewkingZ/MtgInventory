@@ -64,6 +64,7 @@ class SearchFrame(tk.Frame):
             # Index Error occurs when double clicking the Search Entry field after having selected a card
             try:
                 self.client.update_display(self.results[int(self.list.curselection()[0])])
+                print(self.results[int(self.list.curselection()[0])].multiverse_id)
             except IndexError:
                 pass
 

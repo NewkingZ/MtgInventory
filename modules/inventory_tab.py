@@ -47,7 +47,8 @@ class InventoryFrame(tk.Frame):
 		for option in self.collections:
 			self.group_menu["menu"].add_command(label=option, command=lambda value=option: self.group_var.set(value))
 
-		self.fetch = tk.Button(self.search_frame, text="Fetch", command=self.display_collection, width=15, height=1)
+		self.fetch = tk.Button(self.search_frame, text="Fetch",
+							   command=lambda: self.display_collection(1, self.group_var.get()), width=15,height=1)
 		self.import_button = tk.Button(self.search_frame, text="Import", command=self.import_collection,
 									   width=20, height=1)
 		self.manage = tk.Button(self.search_frame, text="Manage Collections", command=self.manage_collections, width=15,
@@ -58,8 +59,12 @@ class InventoryFrame(tk.Frame):
 		self.list.config(yscrollcommand=scrollbar.set)
 		scrollbar.config(command=self.list.yview)
 
-		self.button_prev = tk.Button(self, text="Previous page", command=print_nyan, width=15, height=1)
-		self.button_next = tk.Button(self, text="Next page", command=print_nyan, width=15, height=1)
+		self.button_prev = tk.Button(self, text="Previous page",
+									 command=lambda: self.display_collection(self.page - 1, self.current_collection),
+									 width=15, height=1)
+		self.button_next = tk.Button(self, text="Next page",
+									 command=lambda: self.display_collection(self.page + 1, self.current_collection),
+									 width=15, height=1)
 		self.page_var = tk.StringVar()
 		# Maybe remove set from headers for set code instead
 
@@ -100,8 +105,8 @@ class InventoryFrame(tk.Frame):
 		self.update_page_info()
 
 	def update_page_info(self):
-		self.button_prev["state"] = tk.DISABLED
 		if self.current_collection is None:
+			self.button_prev["state"] = tk.DISABLED
 			self.button_next["state"] = tk.DISABLED
 			self.page = 1
 			self.num_pages = 1
@@ -109,32 +114,41 @@ class InventoryFrame(tk.Frame):
 			return
 
 		collection_size = collections.collection_size(self.current_collection)
-		self.page = 1
 		self.num_pages = collection_size // PAGE_SIZE
 		if collection_size % 100 != 0 or collection_size == 0:
 			self.num_pages = self.num_pages + 1
 		self.page_var.set("Page " + str(self.page) + " of " + str(self.num_pages))
-		if self.num_pages > 1:
+		if self.num_pages > self.page:
 			self.button_next["state"] = tk.NORMAL
+		else:
+			self.button_next["state"] = tk.DISABLED
+		if self.page > 1:
+			self.button_prev["state"] = tk.NORMAL
+		else:
+			self.button_prev["state"] = tk.DISABLED
 
-	def display_collection(self):
+	def display_collection(self, page_num, collection):
 		self.list.delete(0, tk.END)
 		if self.group_var.get() == collections.ALL:
 			print("Display for Library not yet supported")
 			# TODO: Implement display for Library
 			return
 
+		self.page = page_num
+
 		# Get collection, update pages accordingly, and get cards to show
-		self.current_collection = self.group_var.get()
-		card_pool = collections.collection_get_cards(self.current_collection, 0, PAGE_SIZE)
+		self.current_collection = collection
+		card_pool = collections.collection_get_cards(self.current_collection, (self.page - 1) * PAGE_SIZE, PAGE_SIZE)
 		for card in card_pool.index:
 			# Display card details here
 			t_l = card_pool[collections.CARDNAME][card] + " " * (50 - len(card_pool[collections.CARDNAME][card]))
 			t_l = t_l + card_pool[collections.CARDSET][card] + " " * (9 - len(card_pool[collections.CARDSET][card]))
 			t_l = t_l + card_pool[collections.CARDTYPE][card] + " " * (44 - len(card_pool[collections.CARDTYPE][card]))
-			t_l = t_l + card_pool[collections.CARDRARITY][card] + " " * (13 - len(str(card_pool[collections.CARDRARITY][card])))
+			t_l = t_l + card_pool[collections.CARDRARITY][card] + " " * (
+						13 - len(str(card_pool[collections.CARDRARITY][card])))
 			t_l = t_l + card_pool[collections.CARDCOST][card] + " " * (17 - len(card_pool[collections.CARDCOST][card]))
-			t_l = t_l + str(card_pool[collections.CARDQTY][card]) + " " * (6 - len(str(card_pool[collections.CARDQTY][card])))
+			t_l = t_l + str(card_pool[collections.CARDQTY][card]) + " " * (
+						6 - len(str(card_pool[collections.CARDQTY][card])))
 			t_l = t_l + str(card_pool[collections.CARDFOILS][card])
 			self.list.insert(tk.END, t_l)
 		self.card_pool = card_pool
@@ -239,7 +253,7 @@ class InventoryFrame(tk.Frame):
 			warn_label.config(text="Starting import, this can take a while", fg="orange")
 			warn_label.grid(row=2, column=0, columnspan=2, sticky="ew", padx=5, pady=5)
 			self.update_idletasks()
-			if collections.import_card_list(import_file, collection_selected):
+			if collections.import_card_list(import_file, collection_selected, update_progress_bar):
 				warn_label.config(text="Completed Import!", fg="green")
 			else:
 				warn_label.config(text="A problem occurred during import", fg="red")
@@ -250,6 +264,11 @@ class InventoryFrame(tk.Frame):
 			filename = askopenfilename()
 			collection_entry.delete(0, "end")
 			collection_entry.insert(0, filename)
+
+		def update_progress_bar(cards_done, cards_total):
+			# Change this to a progress bar
+			print("Completed " + str(cards_done + 1) + " of " + str(cards_total + 1))
+			self.update_idletasks()
 
 		search_button = tk.Button(import_collection, text="Select file", height=1, width=10, command=search_files)
 		select_collection = tk.Label(import_collection, text="Import into", height=1, width=15)
@@ -284,7 +303,8 @@ class InventoryFrame(tk.Frame):
 				if self.card_pool is None:
 					return
 				ind = self.list.curselection()[0]
+				offset = (self.page - 1) * PAGE_SIZE
 				# Display the bottom card here
-				self.client.update_display(mtg.fetch_by_id(str(self.card_pool[collections.CARDMID][ind])))
+				self.client.update_display(mtg.fetch_by_id(str(self.card_pool[collections.CARDMID][ind + offset])))
 			except IndexError:
 				pass
